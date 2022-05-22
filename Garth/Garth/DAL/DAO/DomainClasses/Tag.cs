@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Garth.DAL.DAO.DomainClasses;
 
+[Index(nameof(Name), IsUnique = true)]
 public class Tag
 {
     [Key]
@@ -26,20 +28,20 @@ public class Tag
     public ulong CreatorId { get; set; }
 
     [Required]
-    public DateTime? CreationDate { get; set; }
+    public DateTime? CreationDate { get; set; } = DateTime.Now;
 
     [Required]
     [DefaultValue(false)]
-    public bool IsFile { get; set; }
+    public bool IsFile { get; set; } = false;
 
     [Required]
     [DefaultValue("")]
     [StringLength(255)]
-    public string? FileName { get; set; }
+    public string? FileName { get; set; } = string.Empty;
 
     [Required]
     [DefaultValue(false)]
-    public bool Global { get; set; }
+    public bool Global { get; set; } = false;
 
     [Required]
     public ulong Server { get; set; }
