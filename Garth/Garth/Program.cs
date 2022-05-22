@@ -1,4 +1,6 @@
-﻿namespace Garth;
+﻿using MySql.Data.MySqlClient;
+
+namespace Garth;
 
 public class Program
 {

@@ -8,7 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Garth.DAL;
 using Garth.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Garth
 {
@@ -49,12 +51,21 @@ namespace Garth
     {
       Configuration configuration = new Configuration();
       
+      var sqlConnectionString = Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Process);
+      sqlConnectionString ??= Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.User);
+      sqlConnectionString ??= Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Machine);
+      if (sqlConnectionString is null)
+        throw new Exception("Environment variable 'GarthConnectionString' is not set!");
+
       return new ServiceCollection()
         .AddSingleton<DiscordSocketClient>()
         .AddSingleton<Configuration>(configuration)
         .AddSingleton<Configuration.Config>(configuration.Data)
         .AddSingleton<CommandService>()
         .AddSingleton<CommandHandlingService>()
+        .AddDbContext<GarthDbContext>(context => {
+          context.UseMySql(sqlConnectionString, ServerVersion.AutoDetect(sqlConnectionString));
+        })
         .BuildServiceProvider();
     }
 
