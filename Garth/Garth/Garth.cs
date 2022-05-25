@@ -56,11 +56,12 @@ namespace Garth
       sqlConnectionString ??= Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Machine);
       if (sqlConnectionString is null)
         throw new Exception("Environment variable 'GarthConnectionString' is not set!");
-
+      
       return new ServiceCollection()
         .AddSingleton<DiscordSocketClient>()
         .AddSingleton<Configuration>(configuration)
         .AddSingleton<Configuration.Config>(configuration.Data)
+        .AddSingleton<GptService>()
         .AddSingleton<CommandService>()
         .AddSingleton<CommandHandlingService>()
         .AddDbContext<GarthDbContext>(context => {

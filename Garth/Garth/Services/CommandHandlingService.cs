@@ -13,12 +13,14 @@ public class CommandHandlingService
     private readonly DiscordSocketClient _discord;
     private readonly IServiceProvider _services;
     private readonly Configuration.Config _configuration;
+    private readonly GptService _gptService;
 
     public CommandHandlingService(IServiceProvider services)
     {
         _commands = services.GetRequiredService<CommandService>();
         _discord = services.GetRequiredService<DiscordSocketClient>();
         _configuration = services.GetRequiredService<Configuration>();
+        _gptService = services.GetRequiredService<GptService>();
         _services = services;
 
         // Hook CommandExecuted to handle post-command-execution logic.
@@ -61,18 +63,37 @@ public class CommandHandlingService
         }
 
         if (shouldReturn)
-        {
-            if (!message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
-                return;
-        }
+            if (message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
+                shouldReturn = false;
 
         var context = new SocketCommandContext(_discord, message);
+        
+        if (shouldReturn)
+        {
+            await DoGptWork(context);
+            return;
+        }
         // Perform the execution of the command. In this method,
         // the command service will perform precondition and parsing check
         // then execute the command if one is matched.
-        await _commands.ExecuteAsync(context, argPos, _services);
+        var cmdResult = await _commands.ExecuteAsync(context, argPos, _services);
         // Note that normally a result will be returned by this format, but here
         // we will handle the result in CommandExecutedAsync,
+        
+        if (!cmdResult.IsSuccess)
+            await DoGptWork(context);
+    }
+
+    private async Task DoGptWork(SocketCommandContext context)
+    {
+        var isAsking = await _gptService.IsAskingGarth(context.Message.Content);
+        if (isAsking)
+        {
+            var msg = await context.Channel.SendMessageAsync("Hmmm...");
+            var answer = await _gptService.GetResponse(context.Message.Content);
+            await msg.ModifyAsync(x => x.Content = answer);
+        }
+
     }
 
     public async Task CommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
