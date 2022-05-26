@@ -67,20 +67,21 @@ public class CommandHandlingService
                 shouldReturn = false;
 
         var context = new SocketCommandContext(_discord, message);
-        
+
         if (shouldReturn)
         {
             _ = DoGptWork(context);
             return;
         }
+
         // Perform the execution of the command. In this method,
         // the command service will perform precondition and parsing check
         // then execute the command if one is matched.
         var cmdResult = await _commands.ExecuteAsync(context, argPos, _services);
         // Note that normally a result will be returned by this format, but here
         // we will handle the result in CommandExecutedAsync,
-        
-        if (!cmdResult.IsSuccess) 
+
+        if (!cmdResult.IsSuccess)
             _ = DoGptWork(context);
     }
 
@@ -91,20 +92,23 @@ public class CommandHandlingService
         {
             using (var typing = context.Channel.EnterTypingState())
             {
+                var reference = new MessageReference(context.Message.Id, context.Channel.Id, context.Guild.Id);
                 var msg = await _gptService.GetResponse(context.Message.Content);
                 if (msg.Success)
                 {
-                    await context.Channel.SendMessageAsync(msg.Response);
+                    await context.Channel.SendMessageAsync(msg.Response, messageReference: reference);
                     return;
                 }
 
-                await context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
-                    .WithColor(201, 62, 83)
-                    .WithTitle("Error")
-                    .WithDescription(msg.Error).Build());
+                await context.Channel.SendMessageAsync("",
+                    embed: new EmbedBuilder()
+                        .WithColor(201, 62, 83)
+                        .WithTitle("Error")
+                        .WithDescription(msg.Error)
+                        .Build(),
+                    messageReference: reference);
             }
         }
-
     }
 
     public async Task CommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
