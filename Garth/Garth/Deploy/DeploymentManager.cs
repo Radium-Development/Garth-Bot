@@ -33,9 +33,12 @@ public class DeploymentManager
             AnsiConsole.WriteLine("Connecting to server...");
             client.Connect();
             AnsiConsole.WriteLine("Connecting...");
-            client.RunCommand("cd /home/garth/Garth-Bot");
-            client.RunCommand("git pull");
-            client.RunCommand("sudo systemctl restart Garth");
+            var pull = client.RunCommand("cd /home/garth/Garth-Bot && git pull");
+            var restart = client.RunCommand("sudo systemctl restart Garth");
+            foreach (var sshCommand in new [] {pull, restart}.Where(t => t.ExitStatus != 0))
+            {
+                AnsiConsole.MarkupLine($"[red]ERR: [/][gray]{sshCommand.Error}[/]");
+            }
             AnsiConsole.WriteLine("Deployment Complete!");
         }
     }

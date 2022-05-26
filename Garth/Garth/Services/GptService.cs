@@ -72,7 +72,11 @@ public class GptService
             "fuck",
             "shit",
             "bitch",
-            "cunt"
+            "cunt",
+            "jew",
+            "cock",
+            "penis",
+            "virgin"
         };
 
         if (bannedWords.Any(t => content.ToLower().Contains(t)))
