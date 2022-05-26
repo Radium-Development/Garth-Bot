@@ -15,14 +15,23 @@ public class TagModule : ModuleBase<SocketCommandContext>
         _db = context;
         _tagDao = new TagDAO(_db);
     }
-    
+
     [Command("tag")]
     [Alias("t")]
     public async Task Tag(string tagName)
     {
         var tag = await _tagDao.GetByName(tagName, Context.Guild.Id);
-        
-        if(tag != null)
-            await ReplyAsync(tag.Content);
+
+        if (tag == null)
+            return;
+
+        if (tag.IsFile)
+        {
+            await using MemoryStream stream = new(Convert.FromBase64String(tag.Content!));
+            await Context.Channel.SendFileAsync(stream, tag.FileName);
+            return;
+        }
+
+        await ReplyAsync(tag.Content);
     }
 }
