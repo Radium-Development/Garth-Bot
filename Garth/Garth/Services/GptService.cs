@@ -53,10 +53,33 @@ public class GptService
         return completionResult.Completions.Any(t => t.Text.Contains("Yes"));
     }
 
-    public async Task<string> GetResponse(string content)
+    public async Task<GptResponse> GetResponse(string content)
     {
         if (_api is null)
-            return "";
+            return new GptResponse
+            {
+                Success = false,
+                Error = "GPT-3 Service Failed to start"
+            };
+
+        string[] bannedWords = new string[]
+        {
+            "jesus",
+            "god",
+            "religion",
+            "fuck",
+            "shit",
+            "bitch",
+            "cunt"
+        };
+
+        if (bannedWords.Any(t => content.ToLower().Contains(t)))
+            return new GptResponse()
+            {
+                Success = false,
+                Error =
+                    "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided."
+            };
         
         var completionResult = await _api.Completions.CreateCompletionAsync(
             content
@@ -64,7 +87,7 @@ public class GptService
                 .Replace("garf", "")
                 .Trim(',')
                 .Trim(),
-            max_tokens: 500,
+            max_tokens: 300,
             temperature: 0.9,
             top_p: 1,
             frequencyPenalty: 0,
@@ -73,6 +96,17 @@ public class GptService
 
         var response = completionResult.Completions.First().Text;
             
-        return response;
+        return new GptResponse
+        {
+            Success = true,
+            Response = response
+        };
     }
+}
+
+public class GptResponse
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public string? Response { get; set; }
 }

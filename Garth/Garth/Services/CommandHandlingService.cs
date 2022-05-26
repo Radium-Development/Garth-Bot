@@ -91,8 +91,17 @@ public class CommandHandlingService
         {
             using (var typing = context.Channel.EnterTypingState())
             {
-                var msg = await context.Channel.SendMessageAsync(
-                    await _gptService.GetResponse(context.Message.Content));
+                var msg = await _gptService.GetResponse(context.Message.Content);
+                if (msg.Success)
+                {
+                    await context.Channel.SendMessageAsync(msg.Response);
+                    return;
+                }
+
+                await context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
+                    .WithColor(201, 62, 83)
+                    .WithTitle("Error")
+                    .WithDescription(msg.Error).Build());
             }
         }
 
