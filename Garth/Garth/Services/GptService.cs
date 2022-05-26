@@ -25,7 +25,18 @@ public class GptService
         if (_api is null)
             return false;
 
-        if (!content.ToLower().Contains("garth"))
+        if (content.Split(' ').Length < 4)
+            return false;
+        
+        if (new Random().Next(0, 75) == 1 && content.Split(' ').Length >= 5)
+            return true;
+        
+        return content.ToLower().Contains("garf");
+        
+        // I know the remaining code doesn't run, but I'm not sure it's useless yet. Going to just keep it for now
+        // - Erik
+        
+        if (!content.ToLower().Contains("garf"))
             return false;
 
         string question = $"Q: Is the following phrase asking Garth a question? \"{content.Trim()}\"\nA:";
@@ -48,14 +59,20 @@ public class GptService
             return "";
         
         var completionResult = await _api.Completions.CreateCompletionAsync(
-            content.Replace("Garth", "").Replace("garth", ""),
-            max_tokens: 1000,
+            content
+                .Replace("Garf", "")
+                .Replace("garf", "")
+                .Trim(',')
+                .Trim(),
+            max_tokens: 500,
             temperature: 0.9,
             top_p: 1,
             frequencyPenalty: 0,
             presencePenalty: 0.6
         );
 
-        return completionResult.Completions.First().Text;
+        var response = completionResult.Completions.First().Text;
+            
+        return response;
     }
 }

@@ -33,4 +33,10 @@ public class TagDAO
     {
         return await _db.Tags!.FirstOrDefaultAsync(x => x.Name!.ToLower() == name.ToLower());
     }
+    
+    public async Task<Tag?> GetByName(string name, ulong server)
+    {
+        var tag = await _db.Tags!.FirstOrDefaultAsync(x => x.Name!.ToLower() == name.ToLower());
+        return (tag.Global || tag?.Server == server) ? tag : null;
+    }
 }

@@ -20,7 +20,7 @@ public class TagGlobalModule : ModuleBase<SocketCommandContext>
     [Alias("t global")]
     public async Task ToggleGlobal(string tagName)
     {
-        var tag = await _tagDao.GetByName(tagName);
+        var tag = await _tagDao.GetByName(tagName, Context.Guild.Id);
 
         if (tag == null)
         {

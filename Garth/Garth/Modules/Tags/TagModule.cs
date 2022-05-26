@@ -20,7 +20,9 @@ public class TagModule : ModuleBase<SocketCommandContext>
     [Alias("t")]
     public async Task Tag(string tagName)
     {
-        var tag = await _tagDao.GetByName(tagName);
-        await ReplyAsync(tag?.Content);
+        var tag = await _tagDao.GetByName(tagName, Context.Guild.Id);
+        
+        if(tag != null)
+            await ReplyAsync(tag.Content);
     }
 }

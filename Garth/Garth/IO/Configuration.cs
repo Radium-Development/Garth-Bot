@@ -11,6 +11,7 @@ namespace Garth.IO
     public class Config
     {
       public string? Token { get; set; }
+      public string? TestingToken { get; set; }
       public string[]? Prefixes { get; set; }
     }
 

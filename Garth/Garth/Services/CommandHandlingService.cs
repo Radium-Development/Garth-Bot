@@ -70,7 +70,7 @@ public class CommandHandlingService
         
         if (shouldReturn)
         {
-            await DoGptWork(context);
+            _ = DoGptWork(context);
             return;
         }
         // Perform the execution of the command. In this method,
@@ -80,8 +80,8 @@ public class CommandHandlingService
         // Note that normally a result will be returned by this format, but here
         // we will handle the result in CommandExecutedAsync,
         
-        if (!cmdResult.IsSuccess)
-            await DoGptWork(context);
+        if (!cmdResult.IsSuccess) 
+            _ = DoGptWork(context);
     }
 
     private async Task DoGptWork(SocketCommandContext context)
@@ -89,9 +89,11 @@ public class CommandHandlingService
         var isAsking = await _gptService.IsAskingGarth(context.Message.Content);
         if (isAsking)
         {
-            var msg = await context.Channel.SendMessageAsync("Hmmm...");
-            var answer = await _gptService.GetResponse(context.Message.Content);
-            await msg.ModifyAsync(x => x.Content = answer);
+            using (var typing = context.Channel.EnterTypingState())
+            {
+                var msg = await context.Channel.SendMessageAsync(
+                    await _gptService.GetResponse(context.Message.Content));
+            }
         }
 
     }
