@@ -29,9 +29,9 @@ public class GptService
 
         if (content.Split(' ').Length < 4)
             return false;
-        
-        if (new Random().Next(0, 75) == 1 && content.Split(' ').Length >= 5)
-            return true;
+         
+        //if (new Random().Next(0, 75) == 1 && content.Split(' ').Length >= 5)
+        //    return true;
         
         return content.ToLower().Contains("garf");
         
