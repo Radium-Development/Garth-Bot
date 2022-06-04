@@ -61,6 +61,7 @@ public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
             isFile = true;
             WebClient wc = new();
             var bytes = await wc.DownloadDataTaskAsync(Context.Message.Attachments.FirstOrDefault()!.Url);
+            tagContent = Convert.ToBase64String(bytes);
             fileName = Context.Message.Attachments.FirstOrDefault()!.Filename;
         }
         
