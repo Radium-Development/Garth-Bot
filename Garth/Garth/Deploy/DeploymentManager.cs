@@ -28,6 +28,7 @@ public class DeploymentManager
         var connectionInfo = new ConnectionInfo(target.Address, 22, target.User,
             new PasswordAuthenticationMethod(target.User, pass));
 
+        AnsiConsole.Clear();
         AnsiConsole.WriteLine("Starting deployment...");
         
         using (var client = new SshClient(connectionInfo))

@@ -77,6 +77,7 @@ public class CommandHandlingService
         if (shouldReturn)
         {
             _ = DoGptWork(context);
+            _ = ReplyToInlineTags(context);
             return;
         }
 
@@ -90,7 +91,6 @@ public class CommandHandlingService
         if (!cmdResult.IsSuccess)
         {
             _ = DoGptWork(context);
-            _ = ReplyToInlineTags(context);
         }
     }
 

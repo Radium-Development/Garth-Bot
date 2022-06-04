@@ -1,5 +1,6 @@
 ﻿using Garth.DAL.DAO.DomainClasses;
 using Microsoft.EntityFrameworkCore;
+using Spectre.Console;
 
 namespace Garth.DAL.DAO.DAO;
 
@@ -14,8 +15,16 @@ public class TagDAO
 
     public async Task<DBUpdateResult> Add(Tag tag)
     {
-        await _db.Tags!.AddAsync(tag);
-        return (await _db.SaveChangesAsync()) > 0 ? DBUpdateResult.Sucess : DBUpdateResult.Failed;
+        try
+        {
+            await _db.Tags!.AddAsync(tag);
+            return (await _db.SaveChangesAsync()) > 0 ? DBUpdateResult.Sucess : DBUpdateResult.Failed;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.WriteException(ex);
+            return DBUpdateResult.Failed;
+        }
     }
 
     public async Task<DBUpdateResult> Update(Tag tag)

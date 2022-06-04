@@ -49,7 +49,7 @@ public class TagCreateModule : ModuleBase<SocketCommandContext>
 
         if (await _tagDao.GetByName(tagName) != null)
         {
-            await ReplyAsync("**A tag with that name already exists!");
+            await ReplyAsync("**A tag with that name already exists**");
             return;
         }
 
@@ -61,6 +61,7 @@ public class TagCreateModule : ModuleBase<SocketCommandContext>
             isFile = true;
             WebClient wc = new();
             var bytes = await wc.DownloadDataTaskAsync(Context.Message.Attachments.FirstOrDefault()!.Url);
+            tagContent = Convert.ToBase64String(bytes);
             fileName = Context.Message.Attachments.FirstOrDefault()!.Filename;
         }
         
