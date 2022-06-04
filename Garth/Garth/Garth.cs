@@ -68,16 +68,16 @@ namespace Garth
                 throw new Exception("Environment variable 'GarthConnectionString' is not set!");
 
             return new ServiceCollection()
+                .AddDbContext<GarthDbContext>(context =>
+                {
+                    context.UseMySql(sqlConnectionString, ServerVersion.AutoDetect(sqlConnectionString));
+                })
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<Configuration>(configuration)
                 .AddSingleton<Configuration.Config>(configuration.Data)
                 .AddSingleton<GptService>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
-                .AddDbContext<GarthDbContext>(context =>
-                {
-                    context.UseMySql(sqlConnectionString, ServerVersion.AutoDetect(sqlConnectionString));
-                })
                 .BuildServiceProvider();
         }
 

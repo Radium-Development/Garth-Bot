@@ -1,9 +1,13 @@
 ﻿using System.Reflection;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Garth.DAL;
+using Garth.DAL.DAO.DAO;
 using Garth.IO;
 using Microsoft.Extensions.DependencyInjection;
+using Renci.SshNet.Messages;
 
 namespace Garth.Services;
 
@@ -14,6 +18,7 @@ public class CommandHandlingService
     private readonly IServiceProvider _services;
     private readonly Configuration.Config _configuration;
     private readonly GptService _gptService;
+    private readonly GarthDbContext _db;
 
     public CommandHandlingService(IServiceProvider services)
     {
@@ -21,6 +26,7 @@ public class CommandHandlingService
         _discord = services.GetRequiredService<DiscordSocketClient>();
         _configuration = services.GetRequiredService<Configuration>();
         _gptService = services.GetRequiredService<GptService>();
+        _db = services.GetRequiredService<GarthDbContext>();
         _services = services;
 
         // Hook CommandExecuted to handle post-command-execution logic.
@@ -82,7 +88,10 @@ public class CommandHandlingService
         // we will handle the result in CommandExecutedAsync,
 
         if (!cmdResult.IsSuccess)
+        {
             _ = DoGptWork(context);
+            _ = ReplyToInlineTags(context);
+        }
     }
 
     private async Task DoGptWork(SocketCommandContext context)
@@ -107,6 +116,35 @@ public class CommandHandlingService
                         .WithDescription(msg.Error)
                         .Build(),
                     messageReference: reference);
+            }
+        }
+    }
+
+    public async Task ReplyToInlineTags(SocketCommandContext context)
+    {
+        var regexMatches = Regex.Matches(context.Message.Content, "\\$+([A-Za-z0-9!.#@$%^&()]+)");
+
+        if (regexMatches.Count == 0)
+            return;
+
+        TagDAO tagDao = new(_db);
+        
+        foreach (Match match in regexMatches)
+        {
+            if (context.Channel is IGuildChannel channel)
+            {
+                var tag = await tagDao.GetByName(match.Groups[1].Value);
+                
+                if(tag == null)
+                    continue;
+
+                if (tag.IsFile)
+                {
+                    await using MemoryStream stream = new MemoryStream(Convert.FromBase64String(tag.Content!));
+                    await context.Channel.SendFileAsync(stream, tag.FileName);
+                }
+                else
+                    await context.Channel.SendMessageAsync(tag.Content!);
             }
         }
     }

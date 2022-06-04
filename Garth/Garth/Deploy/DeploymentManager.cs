@@ -18,6 +18,8 @@ public class DeploymentManager
     
     public DeploymentManager()
     {
+        AnsiConsole.MarkupLine("[bold black on red]ENSURE YOU COMMIT CHANGES TO GIT FIRST[/]");
+        
         var target = _deploymentTargets[0];
         Console.WriteLine($"Enter the password for {target.User}@{target.Address}");
         Console.Write(" > ");

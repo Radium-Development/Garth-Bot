@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord.Commands;
 using Garth.DAL;
@@ -20,7 +21,7 @@ public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
     
     [Command("tag createglobal")]
     [Alias("t createglobal", "tag newglobal", "t newglobal")]
-    public async Task CreateGlobal(string tagName, [Remainder]string content)
+    public async Task CreateGlobal(string tagName, [Remainder, Optional]string? content)
     {
         if(Regex.IsMatch(tagName, "[^A-Za-z0-9!.#@$%^&()]") || new string[] {"create", "delete", "info", "edit", "search", "add", "remove", "global", "createglobal", "addglobal"}.Contains(tagName.ToLower()))
         {
@@ -53,14 +54,14 @@ public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
         }
 
         var tagContent = content;
-        var FileName = string.Empty;
+        var fileName = string.Empty;
         bool isFile = false;
         if (Context.Message.Attachments.Count > 0)
         {
             isFile = true;
             WebClient wc = new();
             var bytes = await wc.DownloadDataTaskAsync(Context.Message.Attachments.FirstOrDefault()!.Url);
-            FileName = Context.Message.Attachments.FirstOrDefault()!.Filename;
+            fileName = Context.Message.Attachments.FirstOrDefault()!.Filename;
         }
         
         var result = await _tagDao.Add(new Tag()
@@ -68,7 +69,7 @@ public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
             Name = tagName,
             Content = tagContent,
             IsFile = isFile,
-            FileName = FileName,
+            FileName = fileName,
             Server = Context.Guild.Id,
             CreatorId = Context.User.Id,
             CreatorName = Context.User.ToString(),
