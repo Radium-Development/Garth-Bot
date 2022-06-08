@@ -76,7 +76,12 @@ public class GptService
             "jew",
             "cock",
             "penis",
-            "virgin"
+            "virgin",
+            "porn",
+            "sex",
+            "gay",
+            "lesbian",
+            "bisexual"
         };
 
         if (bannedWords.Any(t => content.ToLower().Contains(t)))

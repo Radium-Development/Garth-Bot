@@ -1,7 +1,9 @@
 ﻿using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 using Garth.DAL;
 using Garth.DAL.DAO.DAO;
@@ -94,18 +96,60 @@ public class CommandHandlingService
         }
     }
 
+    class MessageThread
+    {
+        public ulong LastMessage { get; set; }
+        public string Content { get; set; }
+    }
+
+    private List<MessageThread> threads = new();
     private async Task DoGptWork(SocketCommandContext context)
     {
         var isAsking = await _gptService.IsAskingGarth(context.Message.Content);
+
+        MessageThread thread = null;
+        StringBuilder toAsk = new StringBuilder();
+        if (!isAsking && context.Message.Reference != null && context.Message.ReferencedMessage.Author.Id == _discord.CurrentUser.Id)
+        {
+            thread = threads.FirstOrDefault(x => x.LastMessage == context.Message.Reference.MessageId.Value);
+            if (thread != null)
+            {
+                isAsking = true;
+                toAsk = new StringBuilder(thread.Content);
+                toAsk.AppendLine("Human: " + context.Message.Content);
+            }
+        } else if (isAsking)
+            toAsk.AppendLine("Human: " + context.Message.Content);
+        
         if (isAsking)
         {
             using (var typing = context.Channel.EnterTypingState())
             {
                 var reference = new MessageReference(context.Message.Id, context.Channel.Id, context.Guild.Id);
-                var msg = await _gptService.GetResponse(context.Message.Content);
+                var msg = await _gptService.GetResponse(toAsk.ToString().Trim() + "\nAI: ");
+                
                 if (msg.Success)
                 {
-                    await context.Channel.SendMessageAsync(msg.Response, messageReference: reference);
+                    if(msg.Response.Length > 2000)
+                    {
+                        await context.Channel.SendMessageAsync("",
+                            embed: new EmbedBuilder()
+                                .WithColor(201, 62, 83)
+                                .WithTitle("Error")
+                                .WithDescription("Reply too long!")
+                                .Build(),
+                            messageReference: reference);
+                        return;
+                    }
+                    
+                    var reply = await context.Channel.SendMessageAsync(msg.Response.Replace("AI: ", ""), messageReference: reference);
+                    thread ??= new MessageThread();
+                    toAsk.AppendLine("AI: " + reply.Content.Trim());
+                    thread.LastMessage = reply.Id;
+                    thread.Content = toAsk.ToString();
+                    if (!threads.Contains(thread))
+                        threads.Add(thread);
+                    
                     return;
                 }
 
