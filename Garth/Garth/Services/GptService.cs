@@ -1,13 +1,19 @@
-﻿using OpenAI_API;
+﻿using Garth.DAL;
+using Garth.DAL.DAO.DomainClasses;
+using Microsoft.EntityFrameworkCore;
+using OpenAI_API;
 
 namespace Garth.Services;
 
 public class GptService
 {
     private readonly OpenAIAPI? _api;
-    
-    public GptService()
+    private readonly GarthDbContext _db;
+
+    public GptService(GarthDbContext context)
     {
+        _db = context;
+        
         var openAiToken = Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.Process); 
         openAiToken ??= Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.User); 
         openAiToken ??= Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.Machine);
@@ -92,8 +98,11 @@ public class GptService
                     "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided."
             };
 
+        List<Context> contexts = await _db.Contexts!.ToListAsync();
+        
         string finalMessage =
-            "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n\n---\n\n" +
+            "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
+            string.Join("\n", contexts.Select(t => t.Value)) + "\n\n---\n\n" +
             content
                 .Replace("Garf", "Garth")
                 .Replace("garf", "garth")

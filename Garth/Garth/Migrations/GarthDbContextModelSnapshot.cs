@@ -19,6 +19,24 @@ namespace Garth.Migrations
                 .HasAnnotation("ProductVersion", "6.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("Garth.DAL.DAO.DomainClasses.Context", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<ulong>("CreatorId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Contexts");
+                });
+
             modelBuilder.Entity("Garth.DAL.DAO.DomainClasses.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -61,6 +79,9 @@ namespace Garth.Migrations
                         .HasColumnType("bigint unsigned");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Tags");
                 });
