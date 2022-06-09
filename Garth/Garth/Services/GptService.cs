@@ -91,13 +91,19 @@ public class GptService
                 Error =
                     "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided."
             };
+
+        string finalMessage =
+            "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n\n---\n\n" +
+            content
+                .Replace("Garf", "Garth")
+                .Replace("garf", "garth")
+                .Trim(',')
+                .Trim();
+        
+        Console.WriteLine(finalMessage + "\n\n");
         
         var completionResult = await _api.Completions.CreateCompletionAsync(
-            content
-                .Replace("Garf", "")
-                .Replace("garf", "")
-                .Trim(',')
-                .Trim(),
+            finalMessage,
             max_tokens: 300,
             temperature: 0.9,
             top_p: 1,
@@ -105,7 +111,7 @@ public class GptService
             presencePenalty: 0.6
         );
 
-        var response = completionResult.Completions.First().Text;
+        var response = completionResult.Completions.First().Text.Split("AI: ")[0].Split("Garth: ")[0];
             
         return new GptResponse
         {

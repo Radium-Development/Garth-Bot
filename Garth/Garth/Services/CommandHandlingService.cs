@@ -116,10 +116,10 @@ public class CommandHandlingService
             {
                 isAsking = true;
                 toAsk = new StringBuilder(thread.Content);
-                toAsk.AppendLine("Human: " + context.Message.Content);
+                toAsk.AppendLine($"{context.Message.Author.Username}: " + context.Message.Content);
             }
         } else if (isAsking)
-            toAsk.AppendLine("Human: " + context.Message.Content);
+            toAsk.AppendLine($"{context.Message.Author.Username}: " + context.Message.Content);
         
         if (isAsking)
         {
@@ -142,7 +142,7 @@ public class CommandHandlingService
                         return;
                     }
                     
-                    var reply = await context.Channel.SendMessageAsync(msg.Response.Replace("AI: ", ""), messageReference: reference);
+                    var reply = await context.Channel.SendMessageAsync(msg.Response.Replace("Garth: ", "").Replace("AI: ", ""), messageReference: reference);
                     thread ??= new MessageThread();
                     toAsk.AppendLine("AI: " + reply.Content.Trim());
                     thread.LastMessage = reply.Id;
