@@ -95,13 +95,17 @@ public class GptService
             {
                 Success = false,
                 Error =
-                    "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided."
+                    "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided.\n\nThis message was not produced by GPT-3, but instead a blacklist that prevents specific keywords from being sent to GPT.3. Trying not to bypass this filter with weird tricks would be appreciated."
             };
 
         List<Context> contexts = await _db.Contexts!.ToListAsync();
+
+        var est = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard time");
+        var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, est);
         
         string finalMessage =
             "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
+            $"The current date and time is {String.Format("{0:F}", targetTime)}" +
             string.Join("\n", contexts.Select(t => t.Value)) + "\n\n---\n\n" +
             content
                 .Replace("Garf", "Garth")
