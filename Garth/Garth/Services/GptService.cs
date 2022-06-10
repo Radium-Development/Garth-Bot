@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using Garth.DAL;
 using Garth.DAL.DAO.DomainClasses;
+using Garth.IO;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
 
@@ -10,10 +11,12 @@ public class GptService
 {
     private readonly OpenAIAPI? _api;
     private readonly GarthDbContext _db;
-
-    public GptService(GarthDbContext context)
+    private readonly Configuration.Config _config;
+    
+    public GptService(GarthDbContext context, Configuration.Config config)
     {
         _db = context;
+        _config = config;
         
         var openAiToken = Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.Process); 
         openAiToken ??= Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.User); 
@@ -62,7 +65,7 @@ public class GptService
         return completionResult.Completions.Any(t => t.Text.Contains("Yes"));
     }
 
-    public async Task<GptResponse> GetResponse(string content)
+    public async Task<GptResponse> GetResponse(string content, string sender)
     {
         if (_api is null)
             return new GptResponse
@@ -130,14 +133,14 @@ public class GptService
         
         var completionResult = await _api.Completions.CreateCompletionAsync(
             finalMessage,
-            max_tokens: 300,
+            max_tokens: 300, 
             temperature: 0.9,
             top_p: 1,
-            frequencyPenalty: 0,
-            presencePenalty: 0.6
+            frequencyPenalty: _config.FrequencyPenalty,
+            presencePenalty: _config.PresencePenalty
         );
 
-        var response = completionResult.Completions.First().Text.Split("AI: ")[0].Split("Garth: ")[0];
+        var response = completionResult.Completions.First().Text.Split("AI: ")[0].Split("Garth: ")[0].Split(sender + ": ")[0];
             
         return new GptResponse
         {

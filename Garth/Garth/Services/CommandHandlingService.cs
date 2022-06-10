@@ -126,7 +126,7 @@ public class CommandHandlingService
             using (var typing = context.Channel.EnterTypingState())
             {
                 var reference = new MessageReference(context.Message.Id, context.Channel.Id, context.Guild.Id);
-                var msg = await _gptService.GetResponse(toAsk.ToString().Trim() + "\nAI: ");
+                var msg = await _gptService.GetResponse(toAsk.ToString().Trim() + "\nAI: ", context.Message.Author.Username);
                 
                 if (msg.Success)
                 {

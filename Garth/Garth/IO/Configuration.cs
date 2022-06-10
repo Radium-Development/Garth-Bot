@@ -13,6 +13,8 @@ namespace Garth.IO
       public string? Token { get; set; }
       public string? TestingToken { get; set; }
       public string[]? Prefixes { get; set; }
+      public float FrequencyPenalty { get; set; }
+      public float PresencePenalty { get; set; }
     }
 
     public Configuration() : base("config.json", (loc) => throw new Exception($"Configuration File Created. Please update it.\n\t{loc}"))
