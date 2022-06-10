@@ -1,4 +1,5 @@
-﻿using Garth.DAL;
+﻿using System.Runtime.InteropServices;
+using Garth.DAL;
 using Garth.DAL.DAO.DomainClasses;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
@@ -99,13 +100,21 @@ public class GptService
             };
 
         List<Context> contexts = await _db.Contexts!.ToListAsync();
-
-        Console.WriteLine("Pre-time POST");
         
-        var est = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard time");
-        var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, est);
-        
-        Console.WriteLine("Post-time POST");
+        TimeZoneInfo easternStandardTime = null;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            easternStandardTime = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            easternStandardTime = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            easternStandardTime = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+        }
+        var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, easternStandardTime);
         
         string finalMessage =
             "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
