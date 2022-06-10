@@ -100,8 +100,12 @@ public class GptService
 
         List<Context> contexts = await _db.Contexts!.ToListAsync();
 
+        Console.WriteLine("Pre-time POST");
+        
         var est = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard time");
         var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, est);
+        
+        Console.WriteLine("Post-time POST");
         
         string finalMessage =
             "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
