@@ -119,8 +119,12 @@ public class CommandHandlingService
                 toAsk.AppendLine($"{context.Message.Author.Username}: " + context.Message.Content);
             }
         } else if (isAsking)
-            toAsk.AppendLine($"{context.Message.Author.Username}: " + context.Message.Content);
-        
+        {
+            toAsk.Append($"{context.Message.Author.Username}: " + context.Message.Content);
+            if (context.Message.Reference != null)
+                toAsk.AppendLine($"\n\"{context.Message.ReferencedMessage.Content}\"");
+        }
+
         if (isAsking)
         {
             using (var typing = context.Channel.EnterTypingState())
@@ -142,7 +146,7 @@ public class CommandHandlingService
                         return;
                     }
                     
-                    var reply = await context.Channel.SendMessageAsync(msg.Response.Replace("Garth: ", "").Replace("AI: ", ""), messageReference: reference);
+                    var reply = await context.Channel.SendMessageAsync(msg.Response.Replace("Garth: ", "").Replace("AI: ", "").Split(context.Message.Author.Username)[0], messageReference: reference);
                     thread ??= new MessageThread();
                     toAsk.AppendLine("AI: " + reply.Content.Trim());
                     thread.LastMessage = reply.Id;

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Garth.DAL;
 using Garth.DAL.DAO.DomainClasses;
 using Garth.IO;
@@ -37,32 +38,15 @@ public class GptService
         if (_api is null)
             return false;
 
-        if (content.Split(' ').Length < 4)
+        if (content.Split(' ').Length < 2)
             return false;
          
-        //if (new Random().Next(0, 75) == 1 && content.Split(' ').Length >= 5)
-        //    return true;
-        
-        return content.ToLower().Contains("garf");
-        
-        // I know the remaining code doesn't run, but I'm not sure it's useless yet. Going to just keep it for now
-        // - Erik
-        
-        if (!content.ToLower().Contains("garf"))
-            return false;
+        if (new Random().Next(0, 100) == 1 && content.Split(' ').Length >= 5)
+            return true;
 
-        string question = $"Q: Is the following phrase asking Garth a question? \"{content.Trim()}\"\nA:";
+        Regex regex = new Regex(@":\S*?garf\S*?:", RegexOptions.IgnoreCase);
         
-        var completionResult = await _api.Completions.CreateCompletionAsync(
-            question,
-            max_tokens: 100,
-            temperature: 0,
-            top_p: 1,
-            frequencyPenalty: 0,
-            presencePenalty: 0,
-            stopSequences: new [] {"\n"}
-            );
-        return completionResult.Completions.Any(t => t.Text.Contains("Yes"));
+        return content.ToLower().Contains("garf") && !regex.IsMatch(content);
     }
 
     public async Task<GptResponse> GetResponse(string content, string sender)
@@ -85,13 +69,17 @@ public class GptService
             "cunt",
             "jew",
             "cock",
+            "dick",
             "penis",
+            "vagina",
             "virgin",
             "porn",
             "sex",
             "gay",
             "lesbian",
-            "bisexual"
+            "bisexual",
+            "smut",
+            "ass"
         };
 
         if (bannedWords.Any(t => content.ToLower().Contains(t)))
@@ -120,8 +108,8 @@ public class GptService
         var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, easternStandardTime);
         
         string finalMessage =
-            "Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
-            $"The current date and time is {String.Format("{0:F}", targetTime)}" +
+            //"Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
+            $"The current date and time is {String.Format("{0:F}", targetTime)} EST" +
             string.Join("\n", contexts.Select(t => t.Value)) + "\n\n---\n\n" +
             content
                 .Replace("Garf", "Garth")
