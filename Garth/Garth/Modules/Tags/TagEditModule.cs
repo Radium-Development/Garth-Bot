@@ -6,21 +6,21 @@ using Garth.Helpers;
 
 namespace Garth.Modules.Tags;
 
-public class TagGlobalModule : GarthModuleBase
+public class TagEditModule : GarthModuleBase
 {
-    [Command("tag global")]
-    [Alias("t global")]
-    public async Task ToggleGlobal(string tagName)
+    [Command("tag edit")]
+    [Alias("t edit")]
+    public async Task Tag(string tagName, [Remainder]string content)
     {
         var tag = await Context.TagDao.GetByName(tagName, Context.Guild.Id);
-
+        
         if (tag is null)
         {
-            _ =  ReplyErrorAsync($"Could not find the tag *{tagName}*");
+            _ = ReplyErrorAsync("Tag not found!");
             return;
         }
 
-        tag.Global = !tag.Global;
+        tag.Content = content;
         
         if (await Context.TagDao.Update(tag) == DBUpdateResult.Failed)
         {
@@ -28,6 +28,6 @@ public class TagGlobalModule : GarthModuleBase
             return;
         }
         
-        await ReplySuccessAsync($"Tag *{tag.Name}* is now **{(tag.Global ? "Global" : "Private")}**");
+        await ReplySuccessAsync($"Updated **{tag.Name}**");
     }
 }

@@ -1,8 +1,8 @@
-﻿using Garth.DAL.DAO.DomainClasses;
+﻿using Garth.DAL.DomainClasses;
 using Microsoft.EntityFrameworkCore;
 using Spectre.Console;
 
-namespace Garth.DAL.DAO.DAO;
+namespace Garth.DAL.DAO;
 
 public class TagDAO
 {
@@ -46,6 +46,12 @@ public class TagDAO
     public async Task<Tag?> GetByName(string name, ulong server)
     {
         var tag = await _db.Tags!.FirstOrDefaultAsync(x => x.Name!.ToLower() == name.ToLower());
-        return (tag.Global || tag?.Server == server) ? tag : null;
+        return (tag is not null && (tag.Global || tag?.Server == server)) ? tag : null;
+    }
+
+    public async Task<DBUpdateResult> Remove(Tag tag)
+    {
+        _db.Tags!.Remove(tag);
+        return (await _db.SaveChangesAsync()) > 0 ? DBUpdateResult.Sucess : DBUpdateResult.Failed;
     }
 }

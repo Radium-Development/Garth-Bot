@@ -1,7 +1,7 @@
 ﻿using Discord.Commands;
 using Garth.DAL;
-using Garth.DAL.DAO.DAO;
-using Garth.DAL.DAO.DomainClasses;
+using Garth.DAL.DAO;
+using Garth.DAL.DomainClasses;
 
 namespace Garth.Modules.Contexts;
 

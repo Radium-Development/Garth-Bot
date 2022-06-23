@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace Garth.DAL.DAO.DomainClasses;
+namespace Garth.DAL.DomainClasses;
 
 [Index(nameof(Name), IsUnique = true)]
 public class Tag

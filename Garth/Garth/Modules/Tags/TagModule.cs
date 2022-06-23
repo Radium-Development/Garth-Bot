@@ -1,28 +1,20 @@
 ﻿using Discord.Commands;
 using Garth.DAL;
-using Garth.DAL.DAO.DAO;
-using Garth.DAL.DAO.DomainClasses;
+using Garth.DAL.DAO;
+using Garth.DAL.DomainClasses;
+using Garth.Helpers;
 
 namespace Garth.Modules.Tags;
 
-public class TagModule : ModuleBase<SocketCommandContext>
+public class TagModule : GarthModuleBase
 {
-    private readonly GarthDbContext _db;
-    private readonly TagDAO _tagDao;
-
-    public TagModule(GarthDbContext context)
-    {
-        _db = context;
-        _tagDao = new TagDAO(_db);
-    }
-
     [Command("tag")]
     [Alias("t")]
     public async Task Tag(string tagName)
     {
-        var tag = await _tagDao.GetByName(tagName, Context.Guild.Id);
+        var tag = await Context.TagDao.GetByName(tagName, Context.Guild.Id);
 
-        if (tag == null)
+        if (tag is null)
             return;
 
         if (tag.IsFile)

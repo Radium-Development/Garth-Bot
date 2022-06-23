@@ -6,7 +6,8 @@ using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
 using Garth.DAL;
-using Garth.DAL.DAO.DAO;
+using Garth.DAL.DAO;
+using Garth.Helpers;
 using Garth.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Renci.SshNet.Messages;
@@ -74,7 +75,7 @@ public class CommandHandlingService
             if (message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
                 shouldReturn = false;
 
-        var context = new SocketCommandContext(_discord, message);
+        var context = new GarthCommandContext(_discord, message, _db);
 
         if (shouldReturn)
         {
@@ -103,7 +104,7 @@ public class CommandHandlingService
     }
 
     private List<MessageThread> threads = new();
-    private async Task DoGptWork(SocketCommandContext context)
+    private async Task DoGptWork(GarthCommandContext context)
     {
         var isAsking = await _gptService.IsAskingGarth(context.Message.Content);
 
@@ -168,7 +169,7 @@ public class CommandHandlingService
         }
     }
 
-    public async Task ReplyToInlineTags(SocketCommandContext context)
+    public async Task ReplyToInlineTags(GarthCommandContext context)
     {
         var regexMatches = Regex.Matches(context.Message.Content, "\\$+([A-Za-z0-9!.#@$%^&()]+)");
 
@@ -208,6 +209,6 @@ public class CommandHandlingService
             return;
 
         // the command failed, let's notify the user that something happened.
-        await context.Channel.SendMessageAsync($"error: {result}");
+        await context.Channel.SendMessageAsync(embed: EmbedHelper.Error(result.ToString()));
     }
 }

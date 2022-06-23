@@ -1,6 +1,6 @@
 ﻿using Discord.Commands;
 using Garth.DAL;
-using Garth.DAL.DAO.DomainClasses;
+using Garth.DAL.DomainClasses;
 
 namespace Garth.Modules.Contexts;
 
@@ -21,8 +21,8 @@ public class EditContext : ModuleBase<SocketCommandContext>
             await ReplyAsync("You cannot create new contexts!");
             return;
         }
-
-        DAL.DAO.DomainClasses.Context contextTag = _db.Contexts!.FirstOrDefault(x => x.Id == contextid);
+        
+        Context contextTag = _db.Contexts!.FirstOrDefault(x => x.Id == contextid);
 
         if (contextTag == null)
         {

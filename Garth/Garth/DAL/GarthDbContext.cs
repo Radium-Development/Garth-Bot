@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Garth.DAL.DAO.DomainClasses;
+using Garth.DAL.DomainClasses;
 
 namespace Garth.DAL;
 

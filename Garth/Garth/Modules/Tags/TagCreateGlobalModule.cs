@@ -3,53 +3,45 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord.Commands;
 using Garth.DAL;
-using Garth.DAL.DAO.DAO;
-using Garth.DAL.DAO.DomainClasses;
+using Garth.DAL.DAO;
+using Garth.DAL.DomainClasses;
+using Garth.Helpers;
 
 namespace Garth.Modules.Tags;
 
-public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
+public class TagCreateModuleGlobal : GarthModuleBase
 {
-    private readonly GarthDbContext _db;
-    private readonly TagDAO _tagDao;
-
-    public TagCreateModuleGlobal(GarthDbContext context)
-    {
-        _db = context;
-        _tagDao = new TagDAO(_db);
-    }
-    
     [Command("tag createglobal")]
     [Alias("t createglobal", "tag newglobal", "t newglobal")]
     public async Task CreateGlobal(string tagName, [Remainder, Optional]string? content)
     {
         if(Regex.IsMatch(tagName, "[^A-Za-z0-9!.#@$%^&()]") || new string[] {"create", "delete", "info", "edit", "search", "add", "remove", "global", "createglobal", "addglobal"}.Contains(tagName.ToLower()))
         {
-            await ReplyAsync("**Invalid tag name!**");
+            _ =  ReplyErrorAsync("**Invalid tag name!**");
             return;
         }
         
         if(content == null && Context.Message.Attachments.Count == 0)
         {
-            await ReplyAsync("**You need to supply a value for the tag!**");
+            _ =  ReplyErrorAsync("**You need to supply a value for the tag!**");
             return;
         }
         
         if(Regex.IsMatch(tagName, "<@![0-9]{18}>"))
         {
-            await ReplyAsync("**Illegal mention in tag name!**");
+            _ =  ReplyErrorAsync("**Illegal mention in tag name!**");
             return;
         }
         
         if (!string.IsNullOrWhiteSpace(content) && Regex.IsMatch(content, "<@![0-9]{18}>"))
         {
-            await ReplyAsync("**Illegal mention in tag name!**");
+            _ =  ReplyErrorAsync("**Illegal mention in tag name!**");
             return;
         }
 
-        if (await _tagDao.GetByName(tagName) != null)
+        if (await Context.TagDao.GetByName(tagName) is not null)
         {
-            await ReplyAsync("**A tag with that name already exists!");
+            _ =  ReplyErrorAsync("**A tag with that name already exists!");
             return;
         }
 
@@ -65,7 +57,7 @@ public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
             fileName = Context.Message.Attachments.FirstOrDefault()!.Filename;
         }
         
-        var result = await _tagDao.Add(new Tag()
+        var result = await Context.TagDao.Add(new Tag()
         {  
             Name = tagName,
             Content = tagContent,
@@ -78,8 +70,8 @@ public class TagCreateModuleGlobal : ModuleBase<SocketCommandContext>
         });
         
         if(result == DBUpdateResult.Sucess)
-            await ReplyAsync($"Created new tag: **{tagName}**");
+            _ =  ReplySuccessAsync($"Created new tag: **{tagName}**");
         else
-            await ReplyAsync("Failed to create new tag!");
+            _ =  ReplyErrorAsync("Failed to create new tag!");
     }
 }

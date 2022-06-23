@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Garth.DAL.DAO.DomainClasses;
+namespace Garth.DAL.DomainClasses;
 
 public class Context
 {

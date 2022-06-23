@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Garth.DAL;
-using Garth.DAL.DAO.DomainClasses;
+using Garth.DAL.DomainClasses;
 using Garth.IO;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
