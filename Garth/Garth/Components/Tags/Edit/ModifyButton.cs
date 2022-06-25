@@ -6,6 +6,12 @@ namespace Garth.Components.Tags.Edit;
 
 public class ModifyButton : GarthInteractionBase
 {
+    [ModalInteraction("tags.edit.close.button")]
+    public async Task Close()
+    {
+        await Context.Component.Message.DeleteAsync();
+    }
+    
     [ComponentInteraction("tags.edit.modify.button", true)]
     public async Task next()
     {

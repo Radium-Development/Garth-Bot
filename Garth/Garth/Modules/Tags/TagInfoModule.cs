@@ -45,13 +45,17 @@ public class TagInfoModule : GarthModuleBase
             .AsInfo()
             .WithTitle(tag.Name)
             .WithImageUrl(type == "Image" ? tag.Content : "")
-            .AddField("Tag Type", type)
+            .AddField("Tag Type", type, inline: true)
+            .AddField("Is Global?", tag.Global ? "Yes" : "No", inline: true)
+            .AddField("Server ID", tag.Server, inline: true)
+            .AddField("File Name", tag.FileName)
             .WithTimestamp(tag.CreationDate.Value)
             .WithAuthor(creator)
             .Build();
 
         ComponentBuilder componentBuilder = new ComponentBuilder()
             .WithButton("Modify", "tags.edit.modify.button", disabled: true)
+            .WithButton("Close", "tags.edit.close.button", ButtonStyle.Secondary)
             .WithButton("Delete", "tags.edit.delete.button", ButtonStyle.Danger);
 
         return (embed, componentBuilder.Build());

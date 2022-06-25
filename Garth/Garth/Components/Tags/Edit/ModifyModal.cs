@@ -6,6 +6,7 @@ namespace Garth.Components.Tags.Edit;
 
 public class ModifyModal : GarthInteractionBase
 {
+    
     [ModalInteraction("tags.edit.modify.modal", true)]
     public async Task Modify(SearchModal modal)
     {
