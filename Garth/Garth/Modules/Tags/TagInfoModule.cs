@@ -27,9 +27,9 @@ public class TagInfoModule : GarthModuleBase
         var creator = await client.GetUserAsync(tag.CreatorId);
 
         string type = tag.Content.StartsWith("http") ? "Link" : "Text";
-        if (tag.IsFile)
+        if (tag.IsFile || tag.Content.StartsWith("http"))
         {
-            string ext = Path.GetExtension(Path.GetExtension(tag.FileName));
+            string ext = tag.Content.StartsWith("http") ? Path.GetExtension(tag.Content) : Path.GetExtension(tag.FileName);
             type = (ext.ToLower()) switch
             {
                 _ when new[] { ".mp4", ".mov", ".wmv", ".avi", ".mkv", ".m4v" }.Contains(ext) => "Video",
@@ -44,6 +44,7 @@ public class TagInfoModule : GarthModuleBase
             .WithDescription(tag.IsFile ? "" : (tag.Content.StartsWith("http") ? $"[{tag.Content}]({tag.Content})" :$"```{tag.Content}```"))
             .AsInfo()
             .WithTitle(tag.Name)
+            .WithImageUrl(type == "Image" ? tag.Content : "")
             .AddField("Tag Type", type)
             .WithTimestamp(tag.CreationDate.Value)
             .WithAuthor(creator)
