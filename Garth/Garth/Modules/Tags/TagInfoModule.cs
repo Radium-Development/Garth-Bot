@@ -48,7 +48,7 @@ public class TagInfoModule : GarthModuleBase
             .AddField("Tag Type", type, inline: true)
             .AddField("Is Global?", tag.Global ? "Yes" : "No", inline: true)
             .AddField("Server ID", tag.Server, inline: true)
-            .AddField("File Name", tag.FileName)
+            .AddField("File Name", tag.IsFile ? tag.FileName : "N/A", inline: true)
             .WithTimestamp(tag.CreationDate.Value)
             .WithAuthor(creator)
             .Build();
