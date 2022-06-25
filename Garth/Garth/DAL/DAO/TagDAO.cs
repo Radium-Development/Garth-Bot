@@ -33,9 +33,9 @@ public class TagDAO
         return (await _db.SaveChangesAsync()) > 0 ? DBUpdateResult.Sucess : DBUpdateResult.Failed;
     }
     
-    public async Task<List<Tag>> GetAll()
+    public async Task<List<Tag>> GetAll(ulong? guildid = null)
     {
-        return await _db.Tags!.ToListAsync();
+        return await _db.Tags!.Where(x => guildid == null || x.Global || x.Server == guildid).OrderBy(x => x.Name).ToListAsync();
     }
 
     public async Task<Tag?> GetByName(string name)
@@ -53,5 +53,20 @@ public class TagDAO
     {
         _db.Tags!.Remove(tag);
         return (await _db.SaveChangesAsync()) > 0 ? DBUpdateResult.Sucess : DBUpdateResult.Failed;
+    }
+
+    public async Task<List<Tag>> Search(string? searchTerm = null, ulong? guildid = null, int skip = 0, int count = 10)
+    {
+        if (searchTerm is null)
+            return (await GetAll(guildid)).Skip(skip).Take(count).ToList();
+        
+        var tags = await _db.Tags!
+            .Where(x => guildid == null || x.Global || x.Server == guildid)
+            .Where(x => x.Name.ToLower().Contains(searchTerm.ToLower()))
+            .OrderBy(x => x.Name)
+            .Skip(skip)
+            .Take(count)
+            .ToListAsync();
+        return tags;
     }
 }

@@ -27,7 +27,13 @@ public class EmbedHelper : EmbedBuilder
         return this;
     }
 
-    public EmbedHelper Tighten()
+    public EmbedHelper AsInfo()
+    {
+        this.WithColor(new Discord.Color(36, 90, 227));
+        return this;
+    }
+
+    public EmbedHelper Compact()
     {
         this.AddField($"**{this.Title}**", this.Description);
         this.Title = string.Empty;
@@ -47,6 +53,9 @@ public class EmbedHelper : EmbedBuilder
     
     public static Embed Error(string msg, string title = "Error") =>
         new EmbedHelper().AsError().WithDescription(msg).WithTitle(title).Build();
+    
+    public static Embed Error(Exception exception, string title = "Error") =>
+        new EmbedHelper().AsError().WithDescription(exception.Message).WithTitle(title).Build();
     
     public static Embed Success(string msg, string title = "Success") =>
         new EmbedHelper().AsSuccess().WithDescription(msg).WithTitle(title).Build();

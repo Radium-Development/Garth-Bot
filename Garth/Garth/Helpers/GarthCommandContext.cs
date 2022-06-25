@@ -12,6 +12,8 @@ public class GarthCommandContext : SocketCommandContext
     public GarthDbContext DbContext { get; }
     public TagDAO TagDao { get; }
     
+    public SocketMessageComponent Component { get; }
+    
     public GarthCommandContext(DiscordSocketClient client, SocketUserMessage msg, GarthDbContext ctx) : base(client, msg)
     {
         this.DbContext = ctx;

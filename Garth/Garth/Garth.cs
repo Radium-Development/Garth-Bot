@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Discord.Interactions;
 using Garth.DAL;
 using Garth.DAL.DAO;
 using Garth.DAL.DomainClasses;
@@ -22,7 +23,8 @@ namespace Garth
         private DiscordSocketClient? _client;
         private Configuration.Config? _config;
         private CommandHandlingService? _commandHandlingService;
-
+        private ComponentHandlingService? _componentHandlingService;
+        
         public Garth() =>
             StartBot().GetAwaiter().GetResult();
 
@@ -33,9 +35,10 @@ namespace Garth
                 _client = services.GetRequiredService<DiscordSocketClient>();
                 _config = services.GetRequiredService<Configuration.Config>();
                 _commandHandlingService = services.GetRequiredService<CommandHandlingService>();
-
+                _componentHandlingService = services.GetRequiredService<ComponentHandlingService>();
+                
                 _client.Log += Log;
-
+                
                 #if RELEASE
                 var token = _config.Token;
                 #else
@@ -47,8 +50,8 @@ namespace Garth
 
                 await _client.LoginAsync(TokenType.Bot, token);
                 await _client.StartAsync();
-
                 await _commandHandlingService.InitializeAsync();
+                await _componentHandlingService.InitializeAsync();
 
                 await Task.Delay(-1);
             }
@@ -77,10 +80,12 @@ namespace Garth
                 .AddSingleton<Configuration.Config>(configuration.Data)
                 .AddSingleton<GptService>()
                 .AddSingleton<CommandService>()
+                .AddSingleton<InteractionService>()
                 .AddSingleton<CommandHandlingService>()
+                .AddSingleton<ComponentHandlingService>()
                 .BuildServiceProvider();
         }
-
+        
         private Task Log(LogMessage msg)
         {
             Console.WriteLine(msg.ToString());
