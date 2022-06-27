@@ -79,10 +79,11 @@ public class GptService
             "lesbian",
             "bisexual",
             "smut",
-            "ass"
+            "ass",
+            "virginity"
         };
 
-        if (bannedWords.Any(t => content.ToLower().Contains(t)))
+        if (bannedWords.Any(t => content.ToLower().Contains($" {t} ")))
             return new GptResponse()
             {
                 Success = false,
