@@ -18,7 +18,7 @@ public class EditContext : ModuleBase<SocketCommandContext>
     {
         if (Context.Message.Author.Id != 201582886137233409)
         {
-            await ReplyAsync("You cannot create new contexts!");
+            await ReplyAsync("You cannot edit contexts!");
             return;
         }
         

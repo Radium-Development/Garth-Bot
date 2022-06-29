@@ -58,7 +58,7 @@ public class GptService
                 Error = "GPT-3 Service Failed to start"
             };
 
-        string[] bannedWords = new string[]
+        List<string> bannedWords = new List<string>()
         {
             "jesus",
             "god",
@@ -82,6 +82,7 @@ public class GptService
             "ass",
             "virginity"
         };
+        bannedWords.AddRange((await _db.Blacklist.ToListAsync()).Select(x => x.Value).ToList());
 
         if (bannedWords.Any(t => content.ToLower().Contains($" {t} ")))
             return new GptResponse()
