@@ -84,12 +84,13 @@ public class GptService
         };
         bannedWords.AddRange((await _db.Blacklist.ToListAsync()).Select(x => x.Value).ToList());
 
-        if (bannedWords.Any(t => content.ToLower().Contains($" {t} ")))
+        var blacklistedWordsWithinContent = bannedWords.Where(t => content.ToLower().Contains($" {t} "));
+        if (blacklistedWordsWithinContent.Any())
             return new GptResponse()
             {
                 Success = false,
-                Error =
-                    "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided.\n\nThis message was not produced by GPT-3, but instead a blacklist that prevents specific keywords from being sent to GPT.3. Trying not to bypass this filter with weird tricks would be appreciated."
+                Error = "OpenAI's GPT-3 usage policy kindly requests that topics involving race, beliefs, or religion and any other foul content be avoided.\n\nThis message was not produced by GPT-3, but instead a blacklist that prevents specific keywords from being sent to GPT.3. Trying not to bypass this filter with weird tricks would be appreciated.",
+                BlacklistWords = blacklistedWordsWithinContent
             };
 
         List<Context> contexts = await _db.Contexts!.ToListAsync();
@@ -145,4 +146,5 @@ public class GptResponse
     public bool Success { get; set; }
     public string? Error { get; set; }
     public string? Response { get; set; }
+    public IEnumerable<string> BlacklistWords { get; set; }
 }

@@ -163,6 +163,7 @@ public class CommandHandlingService
                         .WithColor(201, 62, 83)
                         .WithTitle("Error")
                         .WithDescription(msg.Error)
+                        .WithFooter($"Found: {string.Join(", ", msg.BlacklistWords)}")
                         .Build(),
                     messageReference: reference);
             }
