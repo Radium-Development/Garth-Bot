@@ -76,8 +76,8 @@ namespace Garth
                     context.UseMySql(sqlConnectionString, ServerVersion.AutoDetect(sqlConnectionString));
                 })
                 .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<Configuration>(configuration)
-                .AddSingleton<Configuration.Config>(configuration.Data)
+                .AddSingleton(configuration)
+                .AddSingleton(configuration.Data)
                 .AddSingleton<GptService>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<InteractionService>()

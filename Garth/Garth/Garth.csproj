@@ -26,6 +26,7 @@
     <PackageReference Include="MySql.Data" Version="8.0.29" />
     <PackageReference Include="MySql.Data.EntityFrameworkCore" Version="8.0.22" />
     <PackageReference Include="MySql.EntityFrameworkCore" Version="6.0.1" />
+    <PackageReference Include="NTextCat" Version="0.3.65" />
     <PackageReference Include="OpenAI" Version="1.2.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.1" />
     <PackageReference Include="Spectre.Console" Version="0.44.1-preview.0.17" />

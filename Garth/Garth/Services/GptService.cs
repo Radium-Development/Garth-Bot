@@ -1,7 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Garth.DAL;
 using Garth.DAL.DomainClasses;
+using Garth.Enums;
 using Garth.IO;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
@@ -13,6 +15,7 @@ public class GptService
     private readonly OpenAIAPI? _api;
     private readonly GarthDbContext _db;
     private readonly Configuration.Config _config;
+    private readonly List<Engine> _engines;
     
     public GptService(GarthDbContext context, Configuration.Config config)
     {
@@ -28,9 +31,7 @@ public class GptService
         
         _api = new OpenAIAPI(openAiToken);
 
-        var engines = _api.Engines.GetEnginesAsync().GetAwaiter().GetResult();
-        
-        _api.UsingEngine = engines.FirstOrDefault(t => t.EngineName == "text-davinci-002", Engine.Davinci);
+        _engines = _api.Engines.GetEnginesAsync().GetAwaiter().GetResult();
     }
 
     public async Task<bool> IsAskingGarth(string content)
@@ -49,8 +50,16 @@ public class GptService
         return content.ToLower().Contains("garf") && !regex.IsMatch(content);
     }
 
-    public async Task<GptResponse> GetResponse(string content, string sender)
+    public async Task<GptResponse> GetResponse(string content, string sender, Model model = Model.Text)
     {
+        var engine = (model) switch
+        {
+            Model.Codex => "code-davinci-002",
+            Model.Text => "text-davinci-002"
+        };
+        
+        _api!.UsingEngine = _engines.FirstOrDefault(t => t.EngineName == engine, Engine.Davinci);
+        
         if (_api is null)
             return new GptResponse
             {
@@ -58,31 +67,7 @@ public class GptService
                 Error = "GPT-3 Service Failed to start"
             };
 
-        List<string> bannedWords = new List<string>()
-        {
-            "jesus",
-            "god",
-            "religion",
-            "fuck",
-            "shit",
-            "bitch",
-            "cunt",
-            "jew",
-            "cock",
-            "dick",
-            "penis",
-            "vagina",
-            "virgin",
-            "porn",
-            "sex",
-            "gay",
-            "lesbian",
-            "bisexual",
-            "smut",
-            "ass",
-            "virginity"
-        };
-        bannedWords.AddRange((await _db.Blacklist.ToListAsync()).Select(x => x.Value).ToList());
+        List<string> bannedWords = (await _db.Blacklist!.ToListAsync()).Select(x => x.Value).ToList();
 
         var blacklistedWordsWithinContent = bannedWords.Where(t => content.ToLower().Contains($" {t} "));
         if (blacklistedWordsWithinContent.Any())
@@ -93,6 +78,35 @@ public class GptService
                 BlacklistWords = blacklistedWordsWithinContent
             };
 
+        return (model) switch
+        {
+            Model.Codex => await CodexResponse(content),
+            Model.Text => await TextResponse(content, sender)
+        };
+    }
+
+    private async Task<GptResponse> CodexResponse(string content)
+    {
+        var completionResult = await _api!.Completions.CreateCompletionAsync(
+            content,
+            max_tokens: 300, 
+            temperature: 0.0,
+            top_p: 1,
+            frequencyPenalty: 0,
+            presencePenalty: 0
+        );
+
+        var response = completionResult.Completions.First().Text;
+            
+        return new GptResponse
+        {
+            Success = true,
+            Response = response
+        };
+    }
+
+    private async Task<GptResponse> TextResponse(string content, string sender)
+    {
         List<Context> contexts = await _db.Contexts!.ToListAsync();
         
         TimeZoneInfo easternStandardTime = null;
@@ -108,12 +122,13 @@ public class GptService
         {
             easternStandardTime = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
         }
-        var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, easternStandardTime);
+        var targetTime = TimeZoneInfo.ConvertTime(DateTime.Now, easternStandardTime!);
         
         string finalMessage =
-            //"Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
+            /*"Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
             $"The current date and time is {String.Format("{0:F}", targetTime)} EST" +
-            string.Join("\n", contexts.Select(t => t.Value)) + "\n\n---\n\n" +
+            string.Join("\n", contexts.Select(t => t.Value)) + "\n\n---\n\n" +*/
+            (new Random().Next(0, 3) == 1 ? "Garth is a chatbot that reluctantly answers questions with sarcastic responses:\n" : "") +
             content
                 .Replace("Garf", "Garth")
                 .Replace("garf", "garth")
@@ -122,9 +137,9 @@ public class GptService
         
         Console.WriteLine(finalMessage + "\n\n");
         
-        var completionResult = await _api.Completions.CreateCompletionAsync(
+        var completionResult = await _api!.Completions.CreateCompletionAsync(
             finalMessage,
-            max_tokens: 300, 
+            max_tokens: 600, 
             temperature: 0.9,
             top_p: 1,
             frequencyPenalty: _config.FrequencyPenalty,
