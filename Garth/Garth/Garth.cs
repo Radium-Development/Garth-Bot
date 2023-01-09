@@ -79,6 +79,7 @@ namespace Garth
                 .AddSingleton(configuration)
                 .AddSingleton(configuration.Data)
                 .AddSingleton<GptService>()
+                .AddSingleton<ChatGPTCommunicator>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<InteractionService>()
                 .AddSingleton<CommandHandlingService>()

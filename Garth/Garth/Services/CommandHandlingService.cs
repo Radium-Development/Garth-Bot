@@ -22,6 +22,7 @@ public class CommandHandlingService
     private readonly Configuration.Config _configuration;
     private readonly GptService _gptService;
     private readonly GarthDbContext _db;
+    private readonly ChatGPTCommunicator _chatGptService;
 
     public CommandHandlingService(IServiceProvider services)
     {
@@ -30,6 +31,7 @@ public class CommandHandlingService
         _configuration = services.GetRequiredService<Configuration>();
         _gptService = services.GetRequiredService<GptService>();
         _db = services.GetRequiredService<GarthDbContext>();
+        _chatGptService = services.GetRequiredService<ChatGPTCommunicator>();
         _services = services;
 
         // Hook CommandExecuted to handle post-command-execution logic.
@@ -38,6 +40,51 @@ public class CommandHandlingService
         // if it qualifies as a command.
         _discord.MessageReceived += MessageReceivedAsync;
         _discord.MessageUpdated += _discord_MessageUpdated;
+        _discord.MessageReceived += DoChatGptWork;
+    }
+
+    private async Task DoChatGptWork(SocketMessage arg)
+    {
+        Task.Run(async () =>
+        {
+            if (arg.Author.IsBot)
+                return;
+        
+            if (!_chatGptService.isChatGPTThread(arg.Channel.Id) && !arg.Content.ToLower().StartsWith("garth, "))
+                return;
+
+            if (!_chatGptService.isChatGPTThread(arg.Channel.Id) && arg.Content.ToLower().StartsWith("garth, "))
+            {
+                var content = arg.Content.Replace("Garth, ", "", StringComparison.CurrentCultureIgnoreCase);
+            
+                var thread = await ((SocketTextChannel)arg.Channel).CreateThreadAsync($"ChatGPT - {content}", ThreadType.PublicThread, ThreadArchiveDuration.OneDay, arg, true, 10);
+
+                await thread.SendMessageAsync("", embed: EmbedHelper.Warning("ChatGPT functionality is currently in **beta**!\nSome functionality may still be limited.\n\n**Please do not spam messages!**"));
+
+                using (thread.EnterTypingState())
+                {
+                    var GPTResponse = await _chatGptService.GetResponse(content, thread.Id);
+
+                    await thread.SendMessageAsync(GPTResponse.response);
+                }
+
+                return;
+            }
+
+            if (_chatGptService.isThreadBusy(arg.Channel.Id))
+            {
+                await arg.Channel.SendMessageAsync("",
+                    embed: EmbedHelper.Warning(
+                        "Thread is currently busy already generating a reply! Try again in a moment..."));
+                return;
+            }
+        
+            using (arg.Channel.EnterTypingState())
+            {
+                var response = await _chatGptService.GetResponse(arg.Content, arg.Channel.Id);
+                await arg.Channel.SendMessageAsync(response.response);
+            }
+        });
     }
 
     private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2,
