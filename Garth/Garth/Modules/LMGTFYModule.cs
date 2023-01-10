@@ -11,7 +11,7 @@ public class LMGTFYModule : ModuleBase<SocketCommandContext>
     public async Task LMGTFY([Remainder, Optional]string? query)
     {
         query ??= Context.Message.ReferencedMessage.Content;
-
-        await ReplyAsync($"https://letmegooglethat.com/?q={HttpUtility.UrlEncode(query)}");
+        
+        await ReplyAsync($"https://letmegooglethat.com/?q={HttpUtility.UrlEncode(query)}", messageReference: Context.Message.ReferencedMessage?.Reference);
     }
 }
