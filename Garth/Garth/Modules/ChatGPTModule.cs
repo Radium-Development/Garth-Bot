@@ -26,7 +26,7 @@ public class ChatGPTModule : GarthModuleBase
         {
             var GPTResponse = await _service.GetResponse(content, thread.Id);
 
-            await thread.SendMessageAsync(GPTResponse.response);
+            await thread.SendMessageAsync(GPTResponse.response, messageReference: Context.Message.Reference);
         }
     }
 }

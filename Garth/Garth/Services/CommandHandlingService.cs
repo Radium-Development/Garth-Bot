@@ -65,7 +65,7 @@ public class CommandHandlingService
                 {
                     var GPTResponse = await _chatGptService.GetResponse(content, thread.Id);
 
-                    await thread.SendMessageAsync(GPTResponse.response);
+                    await thread.SendMessageAsync(GPTResponse.response, messageReference: arg.Reference);
                 }
 
                 return;
@@ -82,7 +82,7 @@ public class CommandHandlingService
             using (arg.Channel.EnterTypingState())
             {
                 var response = await _chatGptService.GetResponse(arg.Content, arg.Channel.Id);
-                await arg.Channel.SendMessageAsync(response.response);
+                await arg.Channel.SendMessageAsync(response.response, messageReference: arg.Reference);
             }
         });
     }
