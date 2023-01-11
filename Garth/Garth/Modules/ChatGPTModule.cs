@@ -15,7 +15,7 @@ public class ChatGPTModule : GarthModuleBase
         _service = gptService;
     }
     
-    [Command("chatgpt")]
+    [Command("chatgpt"), Alias("chat", "gpt")]
     public async Task Codex([Remainder]string content)
     {
         var thread = await ((SocketTextChannel)Context.Channel).CreateThreadAsync($"ChatGPT - {content}", ThreadType.PublicThread, ThreadArchiveDuration.OneDay, Context.Message, true, 10);

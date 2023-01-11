@@ -128,7 +128,7 @@ public class GptService
             /*"Your name is Garth Santor.\nYou are 58 years old.\nYou teach computer science at Fanshawe college.\n" +
             $"The current date and time is {String.Format("{0:F}", targetTime)} EST" +
             string.Join("\n", contexts.Select(t => t.Value)) + "\n\n---\n\n" +*/
-            (new Random().Next(0, 3) == 1 ? "Garth is a chatbot that reluctantly answers questions with sarcastic responses:\n" : "") +
+            (new Random().Next(0, 3) == 1 ? "Garth is a chatbot that reluctantly answers questions with sarcastic responses.\n" : "Garth is a chatbot that helps answer questions.\n") +
             content
                 .Replace("Garf", "Garth")
                 .Replace("garf", "garth")

@@ -70,7 +70,7 @@ public class CommandHandlingService
 
                 return;
             }
-
+            
             if (_chatGptService.isThreadBusy(arg.Channel.Id))
             {
                 await arg.Channel.SendMessageAsync("",
@@ -111,7 +111,7 @@ public class CommandHandlingService
         bool shouldReturn = true;
         foreach (var prefix in _configuration.Prefixes!)
         {
-            if (message.HasStringPrefix(prefix + " ", ref argPos))
+            if (message.HasStringPrefix(prefix, ref argPos))
             {
                 shouldReturn = false;
                 break;
@@ -178,7 +178,7 @@ public class CommandHandlingService
             using (var typing = context.Channel.EnterTypingState())
             {
                 var reference = new MessageReference(context.Message.Id, context.Channel.Id, context.Guild.Id);
-                var msg = await _gptService.GetResponse(toAsk.ToString().Trim() + "\nAI: ", context.Message.Author.Username);
+                var msg = await _gptService.GetResponse(toAsk.ToString().Trim() + "\nGarth: ", context.Message.Author.Username);
                 
                 if (msg.Success)
                 {
