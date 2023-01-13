@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Shared.Helpers;
 
 namespace Garth.DAL;
 
@@ -11,11 +12,7 @@ public class BloggingContextFactory : IDesignTimeDbContextFactory<GarthDbContext
     {
         var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<GarthDbContext>();
 
-        var sqlConnectionString = Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Process);
-        sqlConnectionString ??= Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.User);
-        sqlConnectionString ??= Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Machine);
-        if (sqlConnectionString is null)
-            throw new Exception("Environment variable 'GarthConnectionString' is not set!");
+        var sqlConnectionString = EnvironmentVariables.Get("GarthConnectionString", true)!;
 
         optionsBuilder.UseMySql(sqlConnectionString, ServerVersion.AutoDetect(sqlConnectionString));
 

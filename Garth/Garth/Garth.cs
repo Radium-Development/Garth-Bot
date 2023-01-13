@@ -13,7 +13,9 @@ using Garth.DAL;
 using Garth.DAL.DAO;
 using Garth.DAL.DomainClasses;
 using Garth.Services;
+using GarthWebPortal;
 using Microsoft.EntityFrameworkCore;
+using Shared.Helpers;
 using Spectre.Console;
 
 namespace Garth
@@ -24,6 +26,7 @@ namespace Garth
         private Configuration.Config? _config;
         private CommandHandlingService? _commandHandlingService;
         private ComponentHandlingService? _componentHandlingService;
+        private WebPortal? _webPortal;
         
         public Garth() =>
             StartBot().GetAwaiter().GetResult();
@@ -36,6 +39,7 @@ namespace Garth
                 _config = services.GetRequiredService<Configuration.Config>();
                 _commandHandlingService = services.GetRequiredService<CommandHandlingService>();
                 _componentHandlingService = services.GetRequiredService<ComponentHandlingService>();
+                _webPortal = services.GetRequiredService<WebPortal>();
                 
                 _client.Log += Log;
                 
@@ -53,6 +57,11 @@ namespace Garth
                 await _commandHandlingService.InitializeAsync();
                 await _componentHandlingService.InitializeAsync();
 
+                _webPortal.Builder.Services.AddSingleton(_client);
+                
+                if(EnvironmentVariables.Get("GARTH_ENABLE_WEB_PORTAL", defaultValue: true))
+                    _ = Task.Run(() => _webPortal.Start());
+                
                 await Task.Delay(-1);
             }
         }
@@ -61,14 +70,7 @@ namespace Garth
         {
             Configuration configuration = new Configuration();
 
-            var sqlConnectionString =
-                Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Process);
-            sqlConnectionString ??=
-                Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.User);
-            sqlConnectionString ??=
-                Environment.GetEnvironmentVariable("GarthConnectionString", EnvironmentVariableTarget.Machine);
-            if (sqlConnectionString is null)
-                throw new Exception("Environment variable 'GarthConnectionString' is not set!");
+            var sqlConnectionString = EnvironmentVariables.Get("GarthConnectionString", true)!;
 
             return new ServiceCollection()
                 .AddDbContext<GarthDbContext>(context =>
@@ -92,6 +94,7 @@ namespace Garth
                 .AddSingleton<InteractionService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<ComponentHandlingService>()
+                .AddSingleton<WebPortal>()
                 .BuildServiceProvider();
         }
         

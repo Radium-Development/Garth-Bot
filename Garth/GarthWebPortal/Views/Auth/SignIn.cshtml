@@ -1,0 +1,30 @@
+﻿@using Microsoft.AspNetCore.Authentication
+@using GarthWebPortal.Extensions
+@model AuthenticationScheme[]
+@{
+    var providers = await Context.GetExternalProvidersAsync();
+    var scheme = providers.FirstOrDefault(x => x.Name == "Discord");
+}
+
+<div>
+    <h1>Content</h1>
+</div>
+
+@section DashboardCards
+{
+    <div class="jumbotron p-3">
+        <form action="/signin" method="post">
+            <h1 class="p-0 m-0">Hello Again!</h1>
+            <span>Unlock more features by signing in</span>
+            <input type="hidden" name="Provider" value="@scheme.Name"/>
+            <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl"/>
+            <br/>
+            <button class="btn btn-lg bg-primary text-white m-0" type="submit">Sign in With @scheme.DisplayName</button>
+        </form>
+    </div>
+}
+
+@section Breadcrumbs
+{
+    <partial name="_Breadcrumbs"/>
+}

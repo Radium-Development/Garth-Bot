@@ -1,0 +1,49 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using GarthWebPortal.Identity
+@using GarthWebPortal.Extensions;
+@{
+    var providers = await Context.GetExternalProvidersAsync();
+    var scheme = providers.FirstOrDefault(x => x.Name == "Discord");
+}
+
+<div class="dropdown-menu dropdown-menu-right">
+    <div class="dropdown-header noti-title">
+        <h6 class="text-overflow m-0">Welcome!</h6>
+    </div>
+    @if (_authHelper.IsAuthenticated)
+    {
+        <a href="#" class="dropdown-item">
+            <i class="ni ni-single-02"></i>
+            <span>My profile</span>
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="ni ni-settings-gear-65"></i>
+            <span>Settings</span>
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="ni ni-calendar-grid-58"></i>
+            <span>Activity</span>
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="ni ni-support-16"></i>
+            <span>Support</span>
+        </a>
+        <div class="dropdown-divider"></div>
+        <form class="form-inline" asp-area="" asp-controller="Auth" asp-action="SignOutCurrentUser" asp-route-returnUrl="@Url.Action("Index", "Home", new {area = ""})">
+            <button type="submit" class="dropdown-item logout">
+                <i class="ni ni-user-run"></i>
+                <span class="logout">Logout</span>
+            </button>
+        </form>
+    }
+    else
+    {
+        <form class="dropdown-item" action="/signin" method="post">
+            <input type="hidden" name="Provider" value="@scheme.Name" />
+            <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+            <i class="ni ni-single-02"></i>
+            <button style="display: inline;border: none; outline: none; padding: 0; background: white;" type="submit">Login</button>
+        </form>
+    }
+</div>

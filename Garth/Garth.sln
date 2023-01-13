@@ -5,6 +5,10 @@ VisualStudioVersion = 17.1.32319.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Garth", "Garth\Garth.csproj", "{D40ECC48-634C-4F54-B90C-68110950C7E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GarthWebPortal", "GarthWebPortal\GarthWebPortal.csproj", "{FDC6FF22-9124-4166-8296-1B796F96CF15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,6 +22,18 @@ Global
 		{D40ECC48-634C-4F54-B90C-68110950C7E3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D40ECC48-634C-4F54-B90C-68110950C7E3}.Deploy|Any CPU.ActiveCfg = Deploy|Any CPU
 		{D40ECC48-634C-4F54-B90C-68110950C7E3}.Deploy|Any CPU.Build.0 = Deploy|Any CPU
+		{FDC6FF22-9124-4166-8296-1B796F96CF15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDC6FF22-9124-4166-8296-1B796F96CF15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDC6FF22-9124-4166-8296-1B796F96CF15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDC6FF22-9124-4166-8296-1B796F96CF15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDC6FF22-9124-4166-8296-1B796F96CF15}.Deploy|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDC6FF22-9124-4166-8296-1B796F96CF15}.Deploy|Any CPU.Build.0 = Debug|Any CPU
+		{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}.Release|Any CPU.Build.0 = Release|Any CPU
+		{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}.Deploy|Any CPU.ActiveCfg = Debug|Any CPU
+		{431CC2EA-9D98-4C10-A09A-C4D6B0BAE645}.Deploy|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,6 +7,7 @@ using Garth.Enums;
 using Garth.IO;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
+using Shared.Helpers;
 
 namespace Garth.Services;
 
@@ -22,9 +23,7 @@ public class GptService
         _db = context;
         _config = config;
         
-        var openAiToken = Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.Process); 
-        openAiToken ??= Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.User); 
-        openAiToken ??= Environment.GetEnvironmentVariable("OPENAI_KEY", EnvironmentVariableTarget.Machine);
+        var openAiToken = EnvironmentVariables.Get("OPENAI_KEY");
         
         if (openAiToken is null)
             return;

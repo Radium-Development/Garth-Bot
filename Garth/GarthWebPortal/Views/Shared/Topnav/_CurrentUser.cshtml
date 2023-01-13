@@ -1,0 +1,42 @@
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using GarthWebPortal.ApplicationUserClaims
+@using GarthWebPortal.Helpers
+@using GarthWebPortal.Identity
+
+@{
+    var currentUser = _authHelper.IsAuthenticated ? _authHelper.CurrentUser : null;
+}
+
+<!-- Current user (right part of the website) -->
+<ul class="navbar-nav align-items-center  ml-auto ml-md-0 ">
+    <li class="nav-item dropdown">
+        <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <div class="media align-items-center">
+                <span class="avatar avatar-sm rounded-circle">
+                    @if (_authHelper.IsAuthenticated)
+                    {
+                        <img alt="Image placeholder" src="https://cdn.discordapp.com/avatars/@(currentUser.id)/@(currentUser.avatar).png">
+                    }
+                    else
+                    {
+                        <img alt="Image placeholder" src="https://icon-library.com/images/unknown-person-icon/unknown-person-icon-4.jpg">
+                    }
+                </span>
+                <div class="media-body  ml-2  d-none d-lg-block">
+                    <span class="mb-0 text-sm  font-weight-bold">
+                        @if (_authHelper.IsAuthenticated)
+                        {
+                            <span>@_authHelper.CurrentUser.username</span>
+                        }
+                        else
+                        {
+                            <span>Anonymous User</span>
+                        }
+                    </span>
+                </div>
+            </div>
+        </a>
+        <partial name="Topnav/_Dropdown"/>
+    </li>
+</ul>
