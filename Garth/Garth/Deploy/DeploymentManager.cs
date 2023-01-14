@@ -1,32 +1,22 @@
 ﻿using Renci.SshNet;
+using Shared.Helpers;
 using Spectre.Console;
 
 namespace Garth.Deploy;
 
 public class DeploymentManager
 {
-    private readonly DeploymentTarget[] _deploymentTargets = new[]
-    {
-        new DeploymentTarget()
-        {
-            Name = "Production",
-            Address = "138.197.128.238",
-            User = "root",
-            TargetType = TargetType.Production
-        }
-    };
     
     public DeploymentManager()
     {
         AnsiConsole.MarkupLine("[bold black on red]ENSURE YOU COMMIT CHANGES TO GIT FIRST[/]");
-        
-        var target = _deploymentTargets[0];
-        Console.WriteLine($"Enter the password for {target.User}@{target.Address}");
-        Console.Write(" > ");
-        var pass = Console.ReadLine();
 
-        var connectionInfo = new ConnectionInfo(target.Address, 22, target.User,
-            new PasswordAuthenticationMethod(target.User, pass));
+        string TARGET_IP = EnvironmentVariables.Get("GARTH_DEPLOY_IP") ?? AnsiConsole.Ask<string>("Enter Deployment IP");
+        string TARGET_USER = EnvironmentVariables.Get("GARTH_DEPLOY_USER") ?? AnsiConsole.Ask<string>("Enter Deployment User");
+        string TARGET_PASSWORD = EnvironmentVariables.Get("GARTH_DEPLOY_PASSWORD") ?? AnsiConsole.Ask<string>("Enter Deployment Password");
+
+        var connectionInfo = new ConnectionInfo(TARGET_IP, 22, TARGET_USER,
+            new PasswordAuthenticationMethod(TARGET_USER, TARGET_PASSWORD));
 
         AnsiConsole.Clear();
         AnsiConsole.WriteLine("Starting deployment...");

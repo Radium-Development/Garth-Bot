@@ -7,9 +7,11 @@ using Discord.Rest;
 using Discord.WebSocket;
 using Garth.DAL;
 using Garth.DAL.DAO;
+using Garth.DAL.DomainClasses;
 using Garth.Helpers;
 using Garth.IO;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Renci.SshNet.Messages;
 
 namespace Garth.Services;
@@ -23,6 +25,7 @@ public class CommandHandlingService
     private readonly GptService _gptService;
     private readonly GarthDbContext _db;
     private readonly ChatGPTCommunicator _chatGptService;
+    private readonly CommandHistoryDAO _commandHistoryDAO;
 
     public CommandHandlingService(IServiceProvider services)
     {
@@ -31,6 +34,7 @@ public class CommandHandlingService
         _configuration = services.GetRequiredService<Configuration>();
         _gptService = services.GetRequiredService<GptService>();
         _db = services.GetRequiredService<GarthDbContext>();
+        _commandHistoryDAO = new CommandHistoryDAO(_db);
         _chatGptService = services.GetRequiredService<ChatGPTCommunicator>();
         _services = services;
 
@@ -87,8 +91,7 @@ public class CommandHandlingService
         });
     }
 
-    private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2,
-        ISocketMessageChannel arg3)
+    private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
     {
         return MessageReceivedAsync(arg2);
     }
@@ -137,7 +140,7 @@ public class CommandHandlingService
         var cmdResult = await _commands.ExecuteAsync(context, argPos, _services);
         // Note that normally a result will be returned by this format, but here
         // we will handle the result in CommandExecutedAsync,
-
+        
         if (!cmdResult.IsSuccess)
         {
             _ = DoGptWork(context);
@@ -252,9 +255,32 @@ public class CommandHandlingService
         if (!command.IsSpecified)
             return;
 
+        var Command = command.Value;
+        
+        _commandHistoryDAO.Add(new CommandHistory
+        {
+            Module = Command.Module.Name,
+            Name = Command.Name,
+            Status = result.IsSuccess ? "Success" : "Failure",
+            ErrorReason = result.ErrorReason,
+            Error = result.Error.ToString(),
+            UserId = context.User.Id,
+            User = $"{context.User.Username}#{context.User.Discriminator}",
+            Guild = context.Guild?.Name ?? null,
+            GuildId = context.Guild?.Id ?? null,
+            Channel = context.Channel.Name,
+            ChannelId = context.Channel.Id,
+            FullCommand = context.Message.Content,
+            MessageId = context.Message.Id,
+            Timestamp = context.Message.Timestamp,
+            Environment = Environment.MachineName
+        });
+
         // the command was successful, we don't care about this result, unless we want to log that a command succeeded.
         if (result.IsSuccess)
+        {
             return;
+        }
 
         // the command failed, let's notify the user that something happened.
         await context.Channel.SendMessageAsync(embed: EmbedHelper.Error(result.ToString()));

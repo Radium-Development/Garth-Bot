@@ -12,4 +12,6 @@ public class GarthDbContext : DbContext
     public virtual DbSet<Context>? Contexts { get; set; }
 
     public virtual DbSet<Blacklist>? Blacklist { get; set; }
+    
+    public virtual DbSet<CommandHistory>? CommandHistory { get; set; }
 }
