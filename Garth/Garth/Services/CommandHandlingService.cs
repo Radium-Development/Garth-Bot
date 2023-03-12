@@ -94,7 +94,7 @@ public class CommandHandlingService
         bool isRandomReply = askGpt;
         askGpt |= context.Message.Content.Contains("garf", StringComparison.CurrentCultureIgnoreCase) && !emoteRegex.IsMatch(messageContent);
         Console.WriteLine($"AskGpt 2: {askGpt}");
-        askGpt |= context.Message.ReferencedMessage.Author.Id == _discord.CurrentUser.Id;
+        askGpt |= context?.Message?.ReferencedMessage?.Author?.Id == _discord.CurrentUser.Id;
         Console.WriteLine($"AskGpt 3: {askGpt}");
 
         // user didn't mention garth, and it was not a random chance
