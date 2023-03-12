@@ -80,7 +80,9 @@ public class CommandHandlingService
     }
     
     private async Task DoChatGptWork(GarthCommandContext context)
-    {   
+    {
+        Console.WriteLine("DoChatGptWork()");
+        
         var messageContent = context.Message.Content
             .Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase);
 
@@ -88,14 +90,20 @@ public class CommandHandlingService
             return;
         
         bool askGpt = new Random().Next(0, 100) == 1 && messageContent.Split(' ').Length >= 5; // Random Chance of Reply
+        Console.WriteLine($"AskGpt 1: {askGpt}");
         bool isRandomReply = askGpt;
         askGpt |= context.Message.Content.Contains("garf", StringComparison.CurrentCultureIgnoreCase) && !emoteRegex.IsMatch(messageContent);
+        Console.WriteLine($"AskGpt 2: {askGpt}");
         askGpt |= context.Message.ReferencedMessage.Author.Id == _discord.CurrentUser.Id;
+        Console.WriteLine($"AskGpt 3: {askGpt}");
 
         // user didn't mention garth, and it was not a random chance
         if (!askGpt)
             return;
 
+        
+        Console.WriteLine($"AskGpt 4");
+        
         using (context.Channel.EnterTypingState())
         {
             CompletionRequestBuilder builder = new CompletionRequestBuilder()
@@ -112,16 +120,19 @@ public class CommandHandlingService
             }).ToList().ForEach(message => builder.AddMessage(MessageRole.user, $"{message.Author.Username}: {message.Content}"));
 
             builder.AddMessage(MessageRole.user, $"{context.Message.Author.Username}: {context.Message.Content}");
-
+            
+            Console.WriteLine($"AskGpt 5");
             var chatGptResponse = await _chatGpt.SendAsync(builder.Build());
 
             // Print out the current ChatGPT request
             //_ = context.Channel.SendMessageAsync(
             //    $"```{string.Join("\n", builder.Build().Messages.Select(x => x.Content))}```");
 
+            Console.WriteLine($"AskGpt 6");
             var responseMessage = chatGptResponse!.Choices.First().Message.Content
                 .Replace("Garth: ", "");
-
+            
+            Console.WriteLine($"AskGpt 7");
             _ = context.Channel.SendMessageAsync(responseMessage);
         }
     }
@@ -143,6 +154,8 @@ public class CommandHandlingService
         if (!(rawMessage is SocketUserMessage message)) return;
         if (message.Source != MessageSource.User) return;
 
+        Console.WriteLine("MessageRecievedAsync()");
+        
         // This value holds the offset where the prefix ends
         var argPos = 0;
         // Perform prefix check.
@@ -155,7 +168,7 @@ public class CommandHandlingService
                 break;
             }
         }
-
+        
         if (shouldReturn)
             if (message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
                 shouldReturn = false;
