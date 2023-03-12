@@ -123,7 +123,7 @@ public class CommandHandlingService
             var responseMessage = chatGptResponse!.Choices.First().Message.Content
                 .Replace("Garth: ", "");
             
-            _ = context.Channel.SendMessageAsync(responseMessage);
+            _ = context.Channel.SendMessageAsync(responseMessage, messageReference: context.Message.Reference);
         }
     }
 

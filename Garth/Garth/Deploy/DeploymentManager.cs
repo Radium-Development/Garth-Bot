@@ -28,7 +28,7 @@ public class DeploymentManager
             AnsiConsole.WriteLine("Connecting...");
             var pull = client.RunCommand("cd /home/garth/Garth-Bot && git pull");
             var chown = client.RunCommand("chown garth:garth -R /home/garth/Garth-Bot");
-            var restart = client.RunCommand("sudo systemctl restart Garth && sudo systemctl restart ChatGPT");
+            var restart = client.RunCommand("sudo systemctl kill Garth && sudo systemctl restart ChatGPT");
             foreach (var sshCommand in new [] {pull, chown, restart}.Where(t => t.ExitStatus != 0))
             {
                 AnsiConsole.MarkupLine($"[red]ERR: [/][gray]{sshCommand.Error}[/]");
