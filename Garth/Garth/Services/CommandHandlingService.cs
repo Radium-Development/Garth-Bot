@@ -80,7 +80,9 @@ public class CommandHandlingService
     }
     
     private async Task DoChatGptWork(GarthCommandContext context)
-    {   
+    {
+        Console.WriteLine("DoChatGptWork()");
+        
         var messageContent = context.Message.Content
             .Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase);
 
@@ -143,6 +145,8 @@ public class CommandHandlingService
         if (!(rawMessage is SocketUserMessage message)) return;
         if (message.Source != MessageSource.User) return;
 
+        Console.WriteLine("MessageRecievedAsync()");
+        
         // This value holds the offset where the prefix ends
         var argPos = 0;
         // Perform prefix check.
@@ -156,14 +160,18 @@ public class CommandHandlingService
             }
         }
 
+        Console.WriteLine("1111()");
+        
         if (shouldReturn)
             if (message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
                 shouldReturn = false;
 
         var context = new GarthCommandContext(_discord, message, _db);
 
+        Console.WriteLine("22222()");
         if (shouldReturn)
         {
+            Console.WriteLine("33333()");
             _ = DoChatGptWork(context);
             _ = ReplyToInlineTags(context);
             return;
@@ -176,8 +184,10 @@ public class CommandHandlingService
         // Note that normally a result will be returned by this format, but here
         // we will handle the result in CommandExecutedAsync,
         
+        Console.WriteLine("44444()");
         if (!cmdResult.IsSuccess)
         {
+            Console.WriteLine("55555()");
             _ = DoChatGptWork(context);
         }
     }
