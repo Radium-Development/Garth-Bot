@@ -18,7 +18,7 @@ public class GarthModuleBase : ModuleBase<GarthCommandContext>
     public async Task ReplyWarningAsync(string msg, string title = "Warning")
         => await ReplyEmbedAsync(EmbedHelper.Warning(msg, title));
 
-    public MessageReference? CreateMessageReference(ulong guild, params IMessage?[] messages)
+    public static MessageReference? CreateMessageReference(ulong guild, params IMessage?[] messages)
     {
         foreach (IMessage? message in messages)
         {

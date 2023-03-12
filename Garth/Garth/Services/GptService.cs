@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using ChatGPTCommunicator.Models;
+using ChatGPTCommunicator.Requests.Completion;
 using Garth.DAL;
 using Garth.DAL.DomainClasses;
 using Garth.Enums;
@@ -8,6 +10,7 @@ using Garth.IO;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
 using Shared.Helpers;
+using CompletionRequest = OpenAI_API.CompletionRequest;
 
 namespace Garth.Services;
 
@@ -54,7 +57,7 @@ public class GptService
         var engine = (model) switch
         {
             Model.Codex => "code-davinci-002",
-            Model.Text => "text-davinci-002"
+            Model.Text => "gpt-3.5-turbo-0301"//"text-davinci-002"
         };
         
         _api!.UsingEngine = _engines.FirstOrDefault(t => t.EngineName == engine, Engine.Davinci);

@@ -1,6 +1,9 @@
 ﻿using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using ChatGPTCommunicator;
+using ChatGPTCommunicator.Models;
+using ChatGPTCommunicator.Requests.Completion;
 using Discord;
 using Discord.Commands;
 using Discord.Rest;
@@ -12,7 +15,9 @@ using Garth.Helpers;
 using Garth.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using NTextCat;
 using Renci.SshNet.Messages;
+using Message = Renci.SshNet.Messages.Message;
 
 namespace Garth.Services;
 
@@ -24,9 +29,10 @@ public class CommandHandlingService
     private readonly Configuration.Config _configuration;
     private readonly GptService _gptService;
     private readonly GarthDbContext _db;
-    private readonly ChatGPTCommunicator _chatGptService;
     private readonly CommandHistoryDAO _commandHistoryDAO;
-
+    private readonly ChatGPT _chatGpt;
+    private readonly Regex emoteRegex = new Regex(@":\S*?garf\S*?:", RegexOptions.IgnoreCase);
+    
     public CommandHandlingService(IServiceProvider services)
     {
         _commands = services.GetRequiredService<CommandService>();
@@ -35,60 +41,83 @@ public class CommandHandlingService
         _gptService = services.GetRequiredService<GptService>();
         _db = services.GetRequiredService<GarthDbContext>();
         _commandHistoryDAO = new CommandHistoryDAO(_db);
-        _chatGptService = services.GetRequiredService<ChatGPTCommunicator>();
+        _chatGpt = services.GetRequiredService<ChatGPT>();
         _services = services;
-
+        
         // Hook CommandExecuted to handle post-command-execution logic.
         _commands.CommandExecuted += CommandExecutedAsync;
         // Hook MessageReceived so we can process each message to see
         // if it qualifies as a command.
         _discord.MessageReceived += MessageReceivedAsync;
         _discord.MessageUpdated += _discord_MessageUpdated;
-        _discord.MessageReceived += DoChatGptWork;
     }
 
-    private async Task DoChatGptWork(SocketMessage arg)
+    private async Task<List<IMessage>> ResolveThreadTree(GarthCommandContext ctx) =>
+        await ResolveThreadTree(ctx.Guild.Id, ctx.Channel.Id, ctx.Message.Id);
+    
+    private async Task<List<IMessage>> ResolveThreadTree(ulong guildId, ulong channelId, ulong messageId)
     {
-        Task.Run(async () =>
+        var channel = (SocketTextChannel)_discord.GetGuild(guildId).GetChannel(channelId);
+        var message = await channel.GetMessageAsync(messageId);
+        
+        List<IMessage> messages = new() {};
+
+        while (message.Reference != null)
         {
-            if (arg.Author.IsBot)
-                return;
+            message = await channel.GetMessageAsync(message.Reference.MessageId.Value);
+            messages.Add(message);
+        }
+
+        messages.Reverse();
         
-            if (!_chatGptService.isChatGPTThread(arg.Channel.Id) && !arg.Content.ToLower().StartsWith("garth, "))
-                return;
+        return messages;
+    }
+    
+    private async Task DoChatGptWork(GarthCommandContext context)
+    {
+        var messageContent = context.Message.Content
+            .Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase);
 
-            if (!_chatGptService.isChatGPTThread(arg.Channel.Id) && arg.Content.ToLower().StartsWith("garth, "))
-            {
-                var content = arg.Content.Replace("Garth, ", "", StringComparison.CurrentCultureIgnoreCase);
-            
-                var thread = await ((SocketTextChannel)arg.Channel).CreateThreadAsync($"ChatGPT - {content}", ThreadType.PublicThread, ThreadArchiveDuration.OneDay, arg, true, 10);
-
-                await thread.SendMessageAsync("", embed: EmbedHelper.Warning("ChatGPT functionality is currently in **beta**!\nSome functionality may still be limited.\n\n**Please do not spam messages!**"));
-
-                using (thread.EnterTypingState())
-                {
-                    var GPTResponse = await _chatGptService.GetResponse(content, thread.Id);
-
-                    await thread.SendMessageAsync(GPTResponse.response, messageReference: arg.Reference);
-                }
-
-                return;
-            }
-            
-            if (_chatGptService.isThreadBusy(arg.Channel.Id))
-            {
-                await arg.Channel.SendMessageAsync("",
-                    embed: EmbedHelper.Warning(
-                        "Thread is currently busy already generating a reply! Try again in a moment..."));
-                return;
-            }
+        if (messageContent.Split(' ').Length < 2)
+            return;
         
-            using (arg.Channel.EnterTypingState())
+        bool askGpt = new Random().Next(0, 100) == 1 && messageContent.Split(' ').Length >= 5; // Random Chance of Reply
+        bool isRandomReply = askGpt;
+        askGpt |= context.Message.Content.Contains("garf", StringComparison.CurrentCultureIgnoreCase) && !emoteRegex.IsMatch(messageContent);
+        askGpt |= context.Message.ReferencedMessage.Author.Id == _discord.CurrentUser.Id;
+
+        // user didn't mention garth, and it was not a random chance
+        if (!askGpt)
+            return;
+
+        using (context.Channel.EnterTypingState())
+        {
+            CompletionRequestBuilder builder = new CompletionRequestBuilder()
+                .AddMessage(MessageRole.system,
+                    "Garth is chill college student who studies computer science with his friends at Fanshawe College. He sometimes gives sarcastic responses and is typically rather funny.");
+
+            // Foreach message in a thread, add them to the context
+            var thread = await ResolveThreadTree(context);
+            (thread.Count switch
             {
-                var response = await _chatGptService.GetResponse(arg.Content, arg.Channel.Id);
-                await arg.Channel.SendMessageAsync(response.response, messageReference: arg.Reference);
-            }
-        });
+                > 0 => thread,
+                _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
+                    .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
+            }).ToList().ForEach(message => builder.AddMessage(MessageRole.user, $"{message.Author.Username}: {message.Content}"));
+
+            builder.AddMessage(MessageRole.user, $"{context.Message.Author.Username}: {context.Message.Content}");
+
+            var chatGptResponse = await _chatGpt.SendAsync(builder.Build());
+
+            // Print out the current ChatGPT request
+            //_ = context.Channel.SendMessageAsync(
+            //    $"```{string.Join("\n", builder.Build().Messages.Select(x => x.Content))}```");
+
+            var responseMessage = chatGptResponse!.Choices.First().Message.Content
+                .Replace("Garth: ", "");
+
+            _ = context.Channel.SendMessageAsync(responseMessage);
+        }
     }
 
     private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
@@ -129,7 +158,7 @@ public class CommandHandlingService
 
         if (shouldReturn)
         {
-            _ = DoGptWork(context);
+            _ = DoChatGptWork(context);
             _ = ReplyToInlineTags(context);
             return;
         }
@@ -143,80 +172,7 @@ public class CommandHandlingService
         
         if (!cmdResult.IsSuccess)
         {
-            _ = DoGptWork(context);
-        }
-    }
-
-    class MessageThread
-    {
-        public ulong LastMessage { get; set; }
-        public string Content { get; set; }
-    }
-
-    private List<MessageThread> threads = new();
-    private async Task DoGptWork(GarthCommandContext context)
-    {
-        var isAsking = await _gptService.IsAskingGarth(context.Message.Content);
-
-        MessageThread thread = null;
-        StringBuilder toAsk = new StringBuilder();
-        if (!isAsking && context.Message.Reference != null && context.Message.ReferencedMessage.Author.Id == _discord.CurrentUser.Id)
-        {
-            thread = threads.FirstOrDefault(x => x.LastMessage == context.Message.Reference.MessageId.Value);
-            if (thread != null)
-            {
-                isAsking = true;
-                toAsk = new StringBuilder(thread.Content);
-                toAsk.AppendLine($"{context.Message.Author.Username}: " + context.Message.Content);
-            }
-        } else if (isAsking)
-        {
-            toAsk.Append($"{context.Message.Author.Username}: " + context.Message.Content);
-            if (context.Message.Reference != null)
-                toAsk.AppendLine($"\n\"{context.Message.ReferencedMessage.Content}\"");
-        }
-
-        if (isAsking)
-        {
-            using (var typing = context.Channel.EnterTypingState())
-            {
-                var reference = new MessageReference(context.Message.Id, context.Channel.Id, context.Guild.Id);
-                var msg = await _gptService.GetResponse(toAsk.ToString().Trim() + "\nGarth: ", context.Message.Author.Username);
-                
-                if (msg.Success)
-                {
-                    if(msg.Response.Length > 2000)
-                    {
-                        await context.Channel.SendMessageAsync("",
-                            embed: new EmbedBuilder()
-                                .WithColor(201, 62, 83)
-                                .WithTitle("Error")
-                                .WithDescription("Reply too long!")
-                                .Build(),
-                            messageReference: reference);
-                        return;
-                    }
-                    
-                    var reply = await context.Channel.SendMessageAsync(msg.Response.Replace("Garth: ", "").Replace("AI: ", "").Split(context.Message.Author.Username)[0], messageReference: reference);
-                    thread ??= new MessageThread();
-                    toAsk.AppendLine("AI: " + reply.Content.Trim());
-                    thread.LastMessage = reply.Id;
-                    thread.Content = toAsk.ToString();
-                    if (!threads.Contains(thread))
-                        threads.Add(thread);
-                    
-                    return;
-                }
-
-                await context.Channel.SendMessageAsync("",
-                    embed: new EmbedBuilder()
-                        .WithColor(201, 62, 83)
-                        .WithTitle("Error")
-                        .WithDescription(msg.Error)
-                        .WithFooter($"Found: {string.Join(", ", msg.BlacklistWords)}")
-                        .Build(),
-                    messageReference: reference);
-            }
+            _ = DoChatGptWork(context);
         }
     }
 
@@ -238,13 +194,15 @@ public class CommandHandlingService
                 if(tag == null)
                     continue;
 
+                var reference = GarthModuleBase.CreateMessageReference(context.Guild.Id, context.Message);
+                
                 if (tag.IsFile)
                 {
                     await using MemoryStream stream = new MemoryStream(Convert.FromBase64String(tag.Content!));
-                    await context.Channel.SendFileAsync(stream, tag.FileName);
+                    await context.Channel.SendFileAsync(stream, tag.FileName, messageReference: reference);
                 }
                 else
-                    await context.Channel.SendMessageAsync(tag.Content!);
+                    await context.Channel.SendMessageAsync(tag.Content!, messageReference: reference);
             }
         }
     }
