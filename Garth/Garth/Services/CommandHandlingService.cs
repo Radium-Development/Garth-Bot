@@ -43,6 +43,12 @@ public class CommandHandlingService
         _commandHistoryDAO = new CommandHistoryDAO(_db);
         _chatGpt = services.GetRequiredService<ChatGPT>();
         _services = services;
+
+        _commands.Log += (s) =>
+        {
+            Console.WriteLine(s.ToString());
+            return Task.CompletedTask;
+        };
         
         // Hook CommandExecuted to handle post-command-execution logic.
         _commands.CommandExecuted += CommandExecutedAsync;
@@ -74,7 +80,7 @@ public class CommandHandlingService
     }
     
     private async Task DoChatGptWork(GarthCommandContext context)
-    {
+    {   
         var messageContent = context.Message.Content
             .Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase);
 
