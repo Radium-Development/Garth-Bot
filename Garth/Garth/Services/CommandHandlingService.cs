@@ -109,7 +109,7 @@ public class CommandHandlingService
             CompletionRequestBuilder builder = new CompletionRequestBuilder()
                 .AddMessage(MessageRole.system,
                     "Garth is chill college student who studies computer science with his friends at Fanshawe College. He sometimes gives sarcastic responses and is typically rather funny.");
-
+            
             // Foreach message in a thread, add them to the context
             var thread = await ResolveThreadTree(context);
             (thread.Count switch
