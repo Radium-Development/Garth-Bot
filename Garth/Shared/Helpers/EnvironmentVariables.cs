@@ -28,7 +28,7 @@ public static class EnvironmentVariables
             _ => string.Empty
         }) ?? (required ? throw new EnvironmentVariableMissingException(name) : null);
 
-    public static T? Get<T>(string name, bool required = false, EnvironmentVariableScope scope = EnvironmentVariableScope.Global, T? defaultValue = default(T))
+    public static T? Get<T>(string name, bool required = false, EnvironmentVariableScope scope = EnvironmentVariableScope.Global, T? defaultValue = default)
     {
         string? value = Get(name, required, scope);
         return value is null ? defaultValue : (T?)Convert.ChangeType(value, typeof(T?));

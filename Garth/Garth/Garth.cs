@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ChatGPTCommunicator;
 using Discord.Commands;
 using Discord.Interactions;
 using Garth.DAL;
@@ -89,12 +90,12 @@ namespace Garth
                 .AddSingleton(configuration)
                 .AddSingleton(configuration.Data)
                 .AddSingleton<GptService>()
-                .AddSingleton<ChatGPTCommunicator>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<InteractionService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<ComponentHandlingService>()
                 .AddSingleton<WebPortal>()
+                .AddSingleton(new ChatGPT(EnvironmentVariables.Get("OPENAI_KEY", true)!))
                 .BuildServiceProvider();
         }
         
