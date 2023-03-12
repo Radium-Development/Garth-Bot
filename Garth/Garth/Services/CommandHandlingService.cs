@@ -97,11 +97,11 @@ public class CommandHandlingService
             return;
 
         
-        using (context.Channel.EnterTypingState())
+        using (context!.Channel.EnterTypingState())
         {
             CompletionRequestBuilder builder = new CompletionRequestBuilder()
                 .AddMessage(MessageRole.system,
-                    "Garth is chill college student who studies computer science with his friends at Fanshawe College. He sometimes gives sarcastic responses and is typically rather funny.");
+                    "Garth is chill college student who studies computer science with his friends at Fanshawe College. He sometimes gives sarcastic responses and is typically rather funny. Only respond to the most recent message, unless previous messages are relevant.");
             
             // Foreach message in a thread, add them to the context
             var thread = await ResolveThreadTree(context);
@@ -112,7 +112,7 @@ public class CommandHandlingService
                     .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
             }).ToList().ForEach(message => builder.AddMessage(MessageRole.user, $"{message.Author.Username}: {message.Content}"));
 
-            builder.AddMessage(MessageRole.user, $"{context.Message.Author.Username}: {context.Message.Content}");
+            builder.AddMessage(MessageRole.user, $"{context!.Message?.Author.Username}: {context!.Message?.Content}");
             
             var chatGptResponse = await _chatGpt.SendAsync(builder.Build());
 
