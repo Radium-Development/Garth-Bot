@@ -110,7 +110,7 @@ public class CommandHandlingService
                 > 0 => thread,
                 _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
                     .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
-            }).ToList().ForEach(message => builder.AddMessage(MessageRole.user, $"{message.Author.Username}: {message.Content}"));
+            }).ToList().ForEach(message => builder.AddMessage(message.Author.Id == _discord.CurrentUser.Id ? MessageRole.assistant : MessageRole.user, $"{message.Author.Username}: {message.Content}"));
 
             builder.AddMessage(MessageRole.user, $"{context!.Message?.Author.Username}: {context!.Message?.Content}");
             
