@@ -89,7 +89,7 @@ public class CommandHandlingService
         
         bool askGpt = new Random().Next(0, 100) == 1 && messageContent.Split(' ').Length >= 5; // Random Chance of Reply
         bool isRandomReply = askGpt;
-        askGpt |= context.Message.Content.Contains("garf", StringComparison.CurrentCultureIgnoreCase) && !emoteRegex.IsMatch(messageContent);
+        askGpt |= context.Message.Content.Contains("garf", StringComparison.CurrentCultureIgnoreCase) && !emoteRegex.IsMatch(context.Message.Content);
         askGpt |= context?.Message?.ReferencedMessage?.Author?.Id == _discord.CurrentUser.Id;
 
         // user didn't mention garth, and it was not a random chance
