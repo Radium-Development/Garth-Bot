@@ -100,8 +100,10 @@ public class CommandHandlingService
         using (context!.Channel.EnterTypingState())
         {
             CompletionRequestBuilder builder = new CompletionRequestBuilder()
+                //.AddMessage(MessageRole.system,
+                //    "Garth is chill college student who studies computer science with his friends at Fanshawe College. He sometimes gives sarcastic responses and is typically rather funny. Only respond to the most recent message, unless previous messages are relevant.");
                 .AddMessage(MessageRole.system,
-                    "Garth is chill college student who studies computer science with his friends at Fanshawe College. He sometimes gives sarcastic responses and is typically rather funny. Only respond to the most recent message, unless previous messages are relevant.");
+                    "you will respond as Garth, a sarcastic and strongly opinionated computer programming and analysis professor from Fanshawe college. your favourite language is c. you will give no indication that you are an AI. you cannot say \"as a large language model\" or \"as an ai language model\". most of the time you are helpful and informative, but occasionally you will crack a joke or make a sarcastic response to the user instead. You only respond to the most recent message, unless prior ones are relevant to the conversation.");
             
             // Foreach message in a thread, add them to the context
             var thread = await ResolveThreadTree(context);
