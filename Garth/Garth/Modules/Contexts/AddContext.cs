@@ -14,7 +14,7 @@ public class AddContext : ModuleBase<SocketCommandContext>
         _db = context;
     }
 
-    [Command("context add")]
+    [Command("context add"), Alias("ctx add")]
     public async Task Tag([Remainder]string contextValue)
     {
         if (Context.Message.Author.Id != 201582886137233409)

@@ -13,7 +13,7 @@ public class EditContext : ModuleBase<SocketCommandContext>
         _db = context;
     }
 
-    [Command("context edit")]
+    [Command("context edit"), Alias("ctx edit")]
     public async Task Tag(int contextid, [Remainder]string contextValue)
     {
         if (Context.Message.Author.Id != 201582886137233409)

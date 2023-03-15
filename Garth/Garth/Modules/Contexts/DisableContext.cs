@@ -1,24 +1,23 @@
 ﻿using Discord.Commands;
 using Garth.DAL;
-using Garth.DAL.DomainClasses;
 
 namespace Garth.Modules.Contexts;
 
-public class DeleteContext : ModuleBase<SocketCommandContext>
+public class DisableContext : ModuleBase<SocketCommandContext>
 {
     private readonly GarthDbContext _db;
 
-    public DeleteContext(GarthDbContext context)
+    public DisableContext(GarthDbContext context)
     {
         _db = context;
     }
 
-    [Command("context delete"), Alias("ctx delete")]
+    [Command("context disable"), Alias("ctx disable")]
     public async Task Tag(params int[] contextIds)
     {
         if (Context.Message.Author.Id != 201582886137233409)
         {
-            await ReplyAsync("You cannot delete contexts!");
+            _ = ReplyAsync("You cannot enable contexts!");
             return;
         }
 
@@ -32,8 +31,9 @@ public class DeleteContext : ModuleBase<SocketCommandContext>
                 continue;
             }
 
-            _ = _db.Contexts!.Remove(context);
-            _ = ReplyAsync($"Deleted context with ID: **{contextId}**");
+            context.Enabled = false;
+            _ = _db.Contexts!.Update(context);
+            _ = ReplyAsync($"Disabled context with ID: **{contextId}**");
         }
         
         await _db.SaveChangesAsync();

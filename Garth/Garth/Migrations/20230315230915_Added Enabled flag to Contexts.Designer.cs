@@ -3,6 +3,7 @@ using System;
 using Garth.DAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Garth.Migrations
 {
     [DbContext(typeof(GarthDbContext))]
-    partial class GarthDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230315230915_Added Enabled flag to Contexts")]
+    partial class AddedEnabledflagtoContexts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

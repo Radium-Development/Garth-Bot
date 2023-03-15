@@ -10,6 +10,8 @@ public class Context
     public int Id { get; set; }
     
     public ulong CreatorId { get; set; }
-    
+
+    public bool Enabled { get; set; } = true;
+
     public string Value { get; set; }
 }
