@@ -84,9 +84,6 @@ public class CommandHandlingService
     {
         var messageContent = context.Message.Content
             .Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase);
-
-        if (messageContent.Split(' ').Length < 2)
-            return;
         
         bool askGpt = new Random().Next(0, 100) == 1 && messageContent.Split(' ').Length >= 5; // Random Chance of Reply
         bool isRandomReply = askGpt;
@@ -97,7 +94,6 @@ public class CommandHandlingService
         if (!askGpt)
             return;
 
-        
         using (context!.Channel.EnterTypingState())
         {
             CompletionRequestBuilder builder = new CompletionRequestBuilder();
@@ -126,9 +122,9 @@ public class CommandHandlingService
                 > 0 => thread,
                 _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
                     .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
-            }).ToList().ForEach(message => builder.AddMessage(message.Author.Id == _discord.CurrentUser.Id ? MessageRole.assistant : MessageRole.user, $"{message.Author.Username}: {message.Content}"));
+            }).ToList().ForEach(message => builder.AddMessage(message.Author.Id == _discord.CurrentUser.Id ? MessageRole.assistant : MessageRole.user, $"{message.Author.Username}: {message.Content.Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase)}"));
 
-            builder.AddMessage(MessageRole.user, $"{context!.Message?.Author.Username}: {context!.Message?.Content}");
+            builder.AddMessage(MessageRole.user, $"{context!.Message?.Author.Username}: {messageContent}");
             
             var chatGptResponse = await _chatGpt.SendAsync(builder.Build());
 
