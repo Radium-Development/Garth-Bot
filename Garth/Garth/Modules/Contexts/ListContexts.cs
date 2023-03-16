@@ -20,7 +20,7 @@ public class ListContexts : ModuleBase<SocketCommandContext>
     {
         if (Context.Message.Author.Id != 201582886137233409)
         {
-            _ = ReplyAsync("You cannot edit contexts!");
+            _ = ReplyAsync("You cannot list contexts!");
             return;
         }
 

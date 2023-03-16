@@ -110,7 +110,7 @@ public class CommandHandlingService
                 TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
                 DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, easternZone);
                 
-                foreach (var ctx in await _db.Contexts!.ToListAsync())
+                foreach (var ctx in await _db.Contexts!.Where(x => x.Enabled).ToListAsync())
                 {
                     var ctxValue = ctx.Value
                         .Replace("[[date]]", easternTime.ToString("D"))

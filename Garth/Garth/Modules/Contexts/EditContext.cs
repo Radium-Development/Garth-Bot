@@ -18,7 +18,7 @@ public class EditContext : ModuleBase<SocketCommandContext>
     {
         if (Context.Message.Author.Id != 201582886137233409)
         {
-            await ReplyAsync("You cannot edit contexts!");
+            await ReplyAsync("You cannot disable contexts!");
             return;
         }
         

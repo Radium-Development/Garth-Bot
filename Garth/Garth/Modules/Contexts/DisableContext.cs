@@ -17,7 +17,7 @@ public class DisableContext : ModuleBase<SocketCommandContext>
     {
         if (Context.Message.Author.Id != 201582886137233409)
         {
-            _ = ReplyAsync("You cannot enable contexts!");
+            _ = ReplyAsync("You cannot disable contexts!");
             return;
         }
 
