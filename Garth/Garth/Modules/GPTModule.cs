@@ -15,5 +15,6 @@ public class GPTModule : GarthModuleBase
         chatBuilder.AddMessage(MessageRole.user, message);
   
         var response = await api.SendAsync(chatBuilder.Build());
+        await ReplyAsync(response);
     }
 }
