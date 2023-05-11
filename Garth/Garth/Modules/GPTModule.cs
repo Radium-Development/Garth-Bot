@@ -8,13 +8,20 @@ namespace Garth.Modules;
 
 public class GPTModule : GarthModuleBase
 {
+    
+    private ChatGPT _api;
+
+    public GPTModule(ChatGPT api) { 
+        _api = api;
+    }
+    
     [Command("gpt")]
-    public async Task GPT(ChatGPT api, [Remainder]string message) {
+    public async Task GPT([Remainder]string message) {
         CompletionRequestBuilder chatBuilder = new();
         
         chatBuilder.AddMessage(MessageRole.user, message);
   
-        var response = await api.SendAsync(chatBuilder.Build());
-        await ReplyAsync(response);
+        var response = await _api.SendAsync(chatBuilder.Build());
+        await ReplyAsync(response!.Choices.First().Message.Content);
     }
 }
