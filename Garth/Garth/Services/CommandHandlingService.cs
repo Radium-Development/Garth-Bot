@@ -110,7 +110,7 @@ public class CommandHandlingService
 
                 builder.AddMessage(MessageRole.system, ctxValue);
             }
-
+            
             if (isRandomReply)
                 builder.AddMessage(MessageRole.system,
                     "You are currently just chiming in randomly. Give a more concise answer and don't get too technical.");

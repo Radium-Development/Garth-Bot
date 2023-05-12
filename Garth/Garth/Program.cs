@@ -6,13 +6,6 @@ namespace Garth;
 
 public class Program
 {
-    public static void Main(string[] args)
-    {
-        #if DEPLOY
-        _ = new DeploymentManager();
-        return;
-        #endif
-        
+    public static void Main(string[] args) =>
         _ = new Garth();
-    }
 }

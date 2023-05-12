@@ -1,4 +1,6 @@
-﻿using Discord;
+﻿#define RELEASE
+
+using Discord;
 using Discord.WebSocket;
 using Garth.IO;
 using Microsoft.Extensions.DependencyInjection;
