@@ -1,9 +1,6 @@
 ﻿using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using ChatGPTCommunicator;
-using ChatGPTCommunicator.Models;
-using ChatGPTCommunicator.Requests.Completion;
 using Discord;
 using Discord.Commands;
 using Discord.Rest;
@@ -16,8 +13,14 @@ using Garth.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NTextCat;
+using OpenAI_API;
+using OpenAI_API.Chat;
+using OpenAI_API.ChatFunctions;
+using OpenAI_API.Models;
 using Renci.SshNet.Messages;
+using DbLoggerCategory = Arch.EntityFrameworkCore.DbLoggerCategory;
 using Message = Renci.SshNet.Messages.Message;
 
 namespace Garth.Services;
@@ -28,10 +31,9 @@ public class CommandHandlingService
     private readonly DiscordSocketClient _discord;
     private readonly IServiceProvider _services;
     private readonly Configuration.Config _configuration;
-    private readonly GptService _gptService;
+    private readonly OpenAIAPI _openAiapi;
     private readonly GarthDbContext _db;
     private readonly CommandHistoryDAO _commandHistoryDAO;
-    private readonly ChatGPT _chatGpt;
     private readonly Regex emoteRegex = new Regex(@":\S*?garf\S*?:", RegexOptions.IgnoreCase);
     
     public CommandHandlingService(IServiceProvider services)
@@ -39,10 +41,9 @@ public class CommandHandlingService
         _commands = services.GetRequiredService<CommandService>();
         _discord = services.GetRequiredService<DiscordSocketClient>();
         _configuration = services.GetRequiredService<Configuration>();
-        _gptService = services.GetRequiredService<GptService>();
+        _openAiapi = services.GetRequiredService<OpenAIAPI>();
         _db = services.GetRequiredService<GarthDbContext>();
         _commandHistoryDAO = new CommandHistoryDAO(_db);
-        _chatGpt = services.GetRequiredService<ChatGPT>();
         _services = services;
 
         _commands.Log += (s) =>
@@ -94,55 +95,87 @@ public class CommandHandlingService
         if (!askGpt)
             return;
 
-        using (context!.Channel.EnterTypingState())
+        var chat = _openAiapi.Chat.CreateConversation(new ChatRequest()
         {
-            CompletionRequestBuilder builder = new CompletionRequestBuilder();
-            
-            var timeUtc = DateTime.UtcNow;
-            TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-            DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, easternZone);
-            
-            foreach (var ctx in await _db.Contexts!.Where(x => x.Enabled).ToListAsync())
+            Model = Model.ChatGPTTurbo0613,
+            /*Function_Call = new Function_Call
             {
-                var ctxValue = ctx.Value
-                    .Replace("[[date]]", easternTime.ToString("D"))
-                    .Replace("[[time]]", easternTime.ToString("t"));
+                Name = "auto"
+            }*/
+        });
+        
+        var timeUtc = DateTime.UtcNow;
+        TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, easternZone);
+        
+        foreach (var ctx in await _db.Contexts!.Where(x => x.Enabled).ToListAsync())
+        {
+            var ctxValue = ctx.Value
+                .Replace("[[date]]", easternTime.ToString("D"))
+                .Replace("[[time]]", easternTime.ToString("t"));
 
-                builder.AddMessage(MessageRole.system, ctxValue);
-            }
-            
-            if (isRandomReply)
-                builder.AddMessage(MessageRole.system,
-                    "You are currently just chiming in randomly. Give a more concise answer and don't get too technical.");
-                
-            // Foreach message in a thread, add them to the context
-            var thread = await ResolveThreadTree(context);
-            (thread.Count switch
-            {
-                > 0 => thread,
-                _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
-                    .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
-            }).ToList().ForEach(message => builder.AddMessage(message.Author.Id == _discord.CurrentUser.Id ? MessageRole.assistant : MessageRole.user, $"{message.Author.Username}: {message.Content.Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase)}"));
-
-            builder.AddMessage(MessageRole.user, $"{context!.Message?.Author.Username}: {messageContent}");
-            
-            var chatGptResponse = await _chatGpt.SendAsync(builder.Build());
-
-            // Print out the current ChatGPT request
-            //_ = context.Channel.SendMessageAsync(
-            //    $"```{string.Join("\n", builder.Build().Messages.Select(x => x.Content))}```");
-            
-            var responseMessage = chatGptResponse!.Choices.First().Message.Content
-                .Replace("Garth: ", "");
-            
-            _ = context.Channel.SendMessageAsync(responseMessage, messageReference: GarthModuleBase.CreateMessageReference(context));
+            chat.AppendSystemMessage(ctxValue);
         }
+        
+        if (isRandomReply)
+            chat.AppendSystemMessage("You are currently just chiming in randomly. Give a more concise answer and don't get too technical.");
+            
+        // Foreach message in a thread, add them to the context
+        var thread = await ResolveThreadTree(context);
+        (thread.Count switch
+        {
+            > 0 => thread,
+            _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
+                .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
+        }).ToList().ForEach(message => chat.AppendMessage(message.Author.Id == _discord.CurrentUser.Id ? ChatMessageRole.Assistant : ChatMessageRole.User, $"{message.Author.Username}: {message.Content.Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase)}"));
+
+        chat.AppendUserInput($"{context!.Message?.Author.Username}: {messageContent}");
+        var functions = new List<Function>();
+        functions.Add(new Function
+        {
+            Name = "generate_image",
+            Description = "Generate an image using Dall-e 2",
+            Parameters = JObject.Parse(@"{
+                ""type"": ""object"",
+                ""properties"": {
+                    ""prompt"": {
+                        ""type"": ""string"",
+                        ""description"": ""The text prompt to use which describes the contents of the image""
+                    }
+                },
+                ""required"": [ ""prompt"" ]
+            }")
+        });
+        //chat.RequestParameters.Functions = functions;
+        Emote loadingEmote = Emote.Parse("<a:loadwheel:1120405941641281649>");
+        
+        var responseMessage =
+            await context.Channel.SendMessageAsync("" + loadingEmote, messageReference: GarthModuleBase.CreateMessageReference(context));
+
+        StringBuilder message = new StringBuilder();
+        DateTime lastEdit = DateTime.Now;
+        await foreach (var res in chat.StreamResponseEnumerableFromChatbotAsync())
+        {
+            message.Append(res);
+            
+            if (message.Length >= 10 && lastEdit.AddSeconds(1) <= DateTime.Now && message.Length < 2000)
+            {
+                lastEdit = DateTime.Now;
+                await responseMessage.ModifyAsync(x =>
+                    x.Content = message.ToString().Replace("Garth: ", "").Replace("Garth 2.0: ", "") + "... " + loadingEmote);
+            }
+        }
+
+        string content = message.ToString().Replace("Garth 2.0: ", "").Replace("Garth: ", "");
+        if (content.Length > 2000)
+        {
+            content = content.Substring(0, 1999);
+        }
+        _ = responseMessage.ModifyAsync(x => x.Content = content);
     }
 
-    private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
-    {
-        return MessageReceivedAsync(arg2);
-    }
+    private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3) =>
+        MessageReceivedAsync(arg2);
 
     public async Task InitializeAsync()
     {

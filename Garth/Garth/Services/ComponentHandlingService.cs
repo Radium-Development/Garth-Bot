@@ -24,7 +24,6 @@ public class ComponentHandlingService
     private readonly DiscordSocketClient _discord;
     private readonly IServiceProvider _services;
     private readonly Configuration.Config _configuration;
-    private readonly GptService _gptService;
     private readonly GarthDbContext _db;
 
     public ComponentHandlingService(IServiceProvider services)
@@ -32,7 +31,6 @@ public class ComponentHandlingService
         _interactions = services.GetRequiredService<InteractionService>();
         _discord = services.GetRequiredService<DiscordSocketClient>();
         _configuration = services.GetRequiredService<Configuration>();
-        _gptService = services.GetRequiredService<GptService>();
         _db = services.GetRequiredService<GarthDbContext>();
         _services = services;
 

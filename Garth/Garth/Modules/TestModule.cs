@@ -1,7 +1,4 @@
 ﻿using System.Text;
-using ChatGPTCommunicator;
-using ChatGPTCommunicator.Models;
-using ChatGPTCommunicator.Requests.Completion;
 using Discord;
 using Discord.Commands;
 using Discord.Net;

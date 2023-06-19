@@ -1,27 +1,29 @@
-﻿using ChatGPTCommunicator;
-using ChatGPTCommunicator.Models;
-using ChatGPTCommunicator.Requests.Completion;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Garth.Helpers;
+using OpenAI_API;
+using OpenAI_API.Chat;
+using OpenAI_API.Models;
 
 namespace Garth.Modules;
 
 public class GPTModule : GarthModuleBase
 {
-    
-    private ChatGPT _api;
+    private OpenAIAPI _api;
 
-    public GPTModule(ChatGPT api) { 
+    public GPTModule(OpenAIAPI api) { 
         _api = api;
     }
     
     [Command("gpt")]
     public async Task GPT([Remainder]string message) {
-        CompletionRequestBuilder chatBuilder = new();
+        var chat = _api.Chat.CreateConversation(new ChatRequest()
+        {
+            Model = Model.ChatGPTTurbo0613
+        });
         
-        chatBuilder.AddMessage(MessageRole.user, message);
-  
-        var response = await _api.SendAsync(chatBuilder.Build());
-        await ReplyAsync(response!.Choices.First().Message.Content);
+        chat.AppendUserInput(message);
+
+        using (Context.Channel.EnterTypingState())
+            _ = ReplyAsync(await chat.GetResponseFromChatbotAsync(), messageReference: CreateMessageReference(Context));
     }
 }

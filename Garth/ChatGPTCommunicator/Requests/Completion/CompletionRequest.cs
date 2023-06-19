@@ -10,4 +10,7 @@ public class CompletionRequest
 
     [JsonProperty("messages")]
     public List<Message> Messages { get; internal set; } = new();
+
+    [JsonProperty("functions")]
+    public List<Function> Functions { get; internal set; } = new();
 }

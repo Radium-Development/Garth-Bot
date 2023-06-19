@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ChatGPTCommunicator;
 using Discord.Commands;
 using Discord.Interactions;
 using Garth.DAL;
@@ -18,6 +17,7 @@ using Garth.DAL.DomainClasses;
 using Garth.Services;
 using GarthWebPortal;
 using Microsoft.EntityFrameworkCore;
+using OpenAI_API;
 using Shared.Helpers;
 using Spectre.Console;
 
@@ -43,6 +43,12 @@ namespace Garth
                 _commandHandlingService = services.GetRequiredService<CommandHandlingService>();
                 _componentHandlingService = services.GetRequiredService<ComponentHandlingService>();
                 _webPortal = services.GetRequiredService<WebPortal>();
+
+                _client.GuildAvailable += guild =>
+                {
+                    Console.WriteLine("Found Guild: " + guild.Name);
+                    return Task.CompletedTask;
+                };
                 
                 _client.Log += Log;
                 
@@ -91,13 +97,12 @@ namespace Garth
                 })
                 .AddSingleton(configuration)
                 .AddSingleton(configuration.Data)
-                .AddSingleton<GptService>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<InteractionService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<ComponentHandlingService>()
                 .AddSingleton<WebPortal>()
-                .AddSingleton(new ChatGPT(EnvironmentVariables.Get("OPENAI_KEY", true)!))
+                .AddSingleton(new OpenAIAPI(EnvironmentVariables.Get("OPENAI_KEY", true)!))
                 .BuildServiceProvider();
         }
         

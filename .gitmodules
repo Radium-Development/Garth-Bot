@@ -1,0 +1,3 @@
+[submodule "Garth/OpenAI-API-dotnet"]
+	path = Garth/OpenAI-API-dotnet
+	url = https://github.com/hansjm10/OpenAI-API-dotnet
