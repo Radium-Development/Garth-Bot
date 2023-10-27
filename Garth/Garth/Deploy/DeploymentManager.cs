@@ -31,7 +31,7 @@ public class DeploymentManager
             var restart = client.RunCommand("sudo systemctl restart Garth");
             foreach (var sshCommand in new [] {pull, chown, restart}.Where(t => t.ExitStatus != 0))
             {
-                AnsiConsole.MarkupLine($"[red]ERR: [/][gray]{sshCommand.Error}[/]");
+                Console.WriteLine($"ERR: \n{sshCommand.Error}");
             }
             AnsiConsole.WriteLine("Deployment Complete!");
         }
