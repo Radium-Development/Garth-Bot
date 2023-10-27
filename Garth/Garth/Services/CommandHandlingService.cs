@@ -1,27 +1,15 @@
 ﻿using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
-using Discord.Rest;
 using Discord.WebSocket;
 using Garth.DAL;
 using Garth.DAL.DAO;
 using Garth.DAL.DomainClasses;
 using Garth.Helpers;
 using Garth.IO;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using NTextCat;
-using OpenAI_API;
-using OpenAI_API.Chat;
-using OpenAI_API.ChatFunctions;
-using OpenAI_API.Models;
-using Renci.SshNet.Messages;
-using DbLoggerCategory = Arch.EntityFrameworkCore.DbLoggerCategory;
-using Message = Renci.SshNet.Messages.Message;
+using IServiceProvider = System.IServiceProvider;
 
 namespace Garth.Services;
 
@@ -31,9 +19,10 @@ public class CommandHandlingService
     private readonly DiscordSocketClient _discord;
     private readonly IServiceProvider _services;
     private readonly Configuration.Config _configuration;
-    private readonly OpenAIAPI _openAiapi;
     private readonly GarthDbContext _db;
     private readonly CommandHistoryDAO _commandHistoryDAO;
+    private readonly EvalService _evalService;
+    
     private readonly Regex emoteRegex = new Regex(@":\S*?garf\S*?:", RegexOptions.IgnoreCase);
     
     public CommandHandlingService(IServiceProvider services)
@@ -41,11 +30,11 @@ public class CommandHandlingService
         _commands = services.GetRequiredService<CommandService>();
         _discord = services.GetRequiredService<DiscordSocketClient>();
         _configuration = services.GetRequiredService<Configuration>();
-        _openAiapi = services.GetRequiredService<OpenAIAPI>();
         _db = services.GetRequiredService<GarthDbContext>();
+        _evalService = services.GetRequiredService<EvalService>();
         _commandHistoryDAO = new CommandHistoryDAO(_db);
         _services = services;
-
+        
         _commands.Log += (s) =>
         {
             Console.WriteLine(s.ToString());
@@ -81,98 +70,6 @@ public class CommandHandlingService
         return messages;
     }
     
-    private async Task DoChatGptWork(GarthCommandContext context)
-    {
-        var messageContent = context.Message.Content
-            .Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase);
-        
-        bool askGpt = new Random().Next(0, 100) == 1 && messageContent.Split(' ').Length >= 5; // Random Chance of Reply
-        bool isRandomReply = askGpt;
-        askGpt |= context.Message.Content.Contains("garf", StringComparison.CurrentCultureIgnoreCase) && !emoteRegex.IsMatch(context.Message.Content);
-        askGpt |= context?.Message?.ReferencedMessage?.Author?.Id == _discord.CurrentUser.Id;
-
-        // user didn't mention garth, and it was not a random chance
-        if (!askGpt)
-            return;
-
-        var chat = _openAiapi.Chat.CreateConversation(new ChatRequest()
-        {
-            Model = Model.ChatGPTTurbo0613,
-            /*Function_Call = new Function_Call
-            {
-                Name = "auto"
-            }*/
-        });
-        
-        var timeUtc = DateTime.UtcNow;
-        TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-        DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, easternZone);
-        
-        foreach (var ctx in await _db.Contexts!.Where(x => x.Enabled).ToListAsync())
-        {
-            var ctxValue = ctx.Value
-                .Replace("[[date]]", easternTime.ToString("D"))
-                .Replace("[[time]]", easternTime.ToString("t"));
-
-            chat.AppendSystemMessage(ctxValue);
-        }
-        
-        if (isRandomReply)
-            chat.AppendSystemMessage("You are currently just chiming in randomly. Give a more concise answer and don't get too technical.");
-            
-        // Foreach message in a thread, add them to the context
-        var thread = await ResolveThreadTree(context);
-        (thread.Count switch
-        {
-            > 0 => thread,
-            _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
-                .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
-        }).ToList().ForEach(message => chat.AppendMessage(message.Author.Id == _discord.CurrentUser.Id ? ChatMessageRole.Assistant : ChatMessageRole.User, $"{message.Author.Username}: {message.Content.Replace("garf", "Garth", StringComparison.CurrentCultureIgnoreCase)}"));
-
-        chat.AppendUserInput($"{context!.Message?.Author.Username}: {messageContent}");
-        var functions = new List<Function>();
-        functions.Add(new Function
-        {
-            Name = "generate_image",
-            Description = "Generate an image using Dall-e 2",
-            Parameters = JObject.Parse(@"{
-                ""type"": ""object"",
-                ""properties"": {
-                    ""prompt"": {
-                        ""type"": ""string"",
-                        ""description"": ""The text prompt to use which describes the contents of the image""
-                    }
-                },
-                ""required"": [ ""prompt"" ]
-            }")
-        });
-        //chat.RequestParameters.Functions = functions;
-        Emote loadingEmote = Emote.Parse("<a:loadwheel:1120405941641281649>");
-        
-        var responseMessage =
-            await context.Channel.SendMessageAsync("" + loadingEmote, messageReference: GarthModuleBase.CreateMessageReference(context));
-
-        StringBuilder message = new StringBuilder();
-        DateTime lastEdit = DateTime.Now;
-        await foreach (var res in chat.StreamResponseEnumerableFromChatbotAsync())
-        {
-            message.Append(res);
-            
-            if (message.Length >= 10 && lastEdit.AddSeconds(1) <= DateTime.Now && message.Length < 2000)
-            {
-                lastEdit = DateTime.Now;
-                await responseMessage.ModifyAsync(x =>
-                    x.Content = message.ToString().Replace("Garth: ", "").Replace("Garth 2.0: ", "") + "... " + loadingEmote);
-            }
-        }
-
-        string content = message.ToString().Replace("Garth 2.0: ", "").Replace("Garth: ", "");
-        if (content.Length > 2000)
-        {
-            content = content.Substring(0, 1999);
-        }
-        _ = responseMessage.ModifyAsync(x => x.Content = content);
-    }
 
     private Task _discord_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3) =>
         MessageReceivedAsync(arg2);
@@ -210,7 +107,6 @@ public class CommandHandlingService
 
         if (shouldReturn)
         {
-            _ = DoChatGptWork(context);
             _ = ReplyToInlineTags(context);
             return;
         }
@@ -221,11 +117,6 @@ public class CommandHandlingService
         var cmdResult = await _commands.ExecuteAsync(context, argPos, _services);
         // Note that normally a result will be returned by this format, but here
         // we will handle the result in CommandExecutedAsync,
-        
-        if (!cmdResult.IsSuccess)
-        {
-            _ = DoChatGptWork(context);
-        }
     }
 
     public async Task ReplyToInlineTags(GarthCommandContext context)

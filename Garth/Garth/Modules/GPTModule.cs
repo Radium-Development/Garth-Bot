@@ -1,29 +1,32 @@
 ﻿using Discord.Commands;
 using Garth.Helpers;
-using OpenAI_API;
-using OpenAI_API.Chat;
-using OpenAI_API.Models;
+using OpenAI.Managers;
+using OpenAI.ObjectModels;
+using OpenAI.ObjectModels.RequestModels;
 
 namespace Garth.Modules;
 
 public class GPTModule : GarthModuleBase
 {
-    private OpenAIAPI _api;
+    private OpenAIService _openAiService;
 
-    public GPTModule(OpenAIAPI api) { 
-        _api = api;
+    public GPTModule(OpenAIService api) { 
+        _openAiService = api;
     }
     
     [Command("gpt")]
     public async Task GPT([Remainder]string message) {
-        var chat = _api.Chat.CreateConversation(new ChatRequest()
+        var response = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
         {
-            Model = Model.ChatGPTTurbo0613
+            Messages = new List<ChatMessage>
+            {
+                new ChatMessage("user", message)
+            },
+            Temperature = 0.4f,
+            Model = Models.Gpt_4
         });
-        
-        chat.AppendUserInput(message);
 
         using (Context.Channel.EnterTypingState())
-            _ = ReplyAsync(await chat.GetResponseFromChatbotAsync(), messageReference: CreateMessageReference(Context));
+            _ = ReplyAsync(response.Choices.First().Message.Content, messageReference: CreateMessageReference(Context));
     }
 }

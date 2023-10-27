@@ -14,10 +14,13 @@ using Discord.Interactions;
 using Garth.DAL;
 using Garth.DAL.DAO;
 using Garth.DAL.DomainClasses;
+using Garth.Helpers.GPT;
 using Garth.Services;
+using Garth.Services.GPT;
 using GarthWebPortal;
 using Microsoft.EntityFrameworkCore;
-using OpenAI_API;
+using OpenAI;
+using OpenAI.Managers;
 using Shared.Helpers;
 using Spectre.Console;
 
@@ -30,7 +33,7 @@ namespace Garth
         private CommandHandlingService? _commandHandlingService;
         private ComponentHandlingService? _componentHandlingService;
         private WebPortal? _webPortal;
-        
+
         public Garth() =>
             StartBot().GetAwaiter().GetResult();
 
@@ -43,20 +46,21 @@ namespace Garth
                 _commandHandlingService = services.GetRequiredService<CommandHandlingService>();
                 _componentHandlingService = services.GetRequiredService<ComponentHandlingService>();
                 _webPortal = services.GetRequiredService<WebPortal>();
+                services.GetRequiredService<GptService>();
 
                 _client.GuildAvailable += guild =>
                 {
                     Console.WriteLine("Found Guild: " + guild.Name);
                     return Task.CompletedTask;
                 };
-                
+
                 _client.Log += Log;
-                
-                #if RELEASE
+
+#if RELEASE
                 var token = _config.Token;
-                #else
+#else
                 var token = _config.TestingToken;
-                #endif
+#endif
 
                 if (token is null)
                     throw new Exception("Bot token not set in config.json");
@@ -67,10 +71,10 @@ namespace Garth
                 await _componentHandlingService.InitializeAsync();
 
                 _webPortal.Builder.Services.AddSingleton(_client);
-                
-                if(EnvironmentVariables.Get("GARTH_ENABLE_WEB_PORTAL", defaultValue: true))
+
+                if (EnvironmentVariables.Get("GARTH_ENABLE_WEB_PORTAL", defaultValue: true))
                     _ = Task.Run(() => _webPortal.Start());
-                
+
                 await Task.Delay(-1);
             }
         }
@@ -90,7 +94,8 @@ namespace Garth
                 {
                     var config = new DiscordSocketConfig()
                     {
-                        GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.GuildMembers | GatewayIntents.All
+                        GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent |
+                                         GatewayIntents.GuildMembers | GatewayIntents.All
                     };
 
                     return new DiscordSocketClient(config);
@@ -101,11 +106,16 @@ namespace Garth
                 .AddSingleton<InteractionService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<ComponentHandlingService>()
+                .AddSingleton<EvalService>()
                 .AddSingleton<WebPortal>()
-                .AddSingleton(new OpenAIAPI(EnvironmentVariables.Get("OPENAI_KEY", true)!))
+                .AddSingleton(new OpenAIService(new OpenAiOptions()
+                {
+                    ApiKey = EnvironmentVariables.Get("OPENAI_KEY", true)!
+                }))
+                .AddSingleton<GptService>()
                 .BuildServiceProvider();
         }
-        
+
         private Task Log(LogMessage msg)
         {
             Console.WriteLine(msg.ToString());

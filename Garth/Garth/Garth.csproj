@@ -2,20 +2,24 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;Deploy</Configurations>
     <Platforms>AnyCPU</Platforms>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Arch.EntityFrameworkCore.Proxies" Version="2.1.15" />
+    <PackageReference Include="Betalgo.OpenAI" Version="7.3.1" />
+    <PackageReference Include="Betalgo.OpenAI.Utilities" Version="7.0.3" />
     <PackageReference Include="Discord.Net.Commands" Version="3.9.0" />
     <PackageReference Include="Discord.Net.Core" Version="3.9.0" />
     <PackageReference Include="Discord.Net.Interactions" Version="3.9.0" />
     <PackageReference Include="Discord.Net.Rest" Version="3.9.0" />
     <PackageReference Include="Discord.Net.WebSocket" Version="3.9.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.6.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.2">
@@ -29,7 +33,6 @@
     <PackageReference Include="MySql.EntityFrameworkCore" Version="7.0.0-preview5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NTextCat" Version="0.3.65" />
-    <PackageReference Include="OpenAI" Version="1.2.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0-silver.1" />
     <PackageReference Include="Spectre.Console" Version="0.46.1-preview.0.1" />
     <PackageReference Include="SSH.NET" Version="2020.0.2" />
@@ -38,7 +41,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GarthWebPortal\GarthWebPortal.csproj" />
-    <ProjectReference Include="..\OpenAI-API-dotnet\OpenAI_API\OpenAI_API.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,5 +55,6 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+
 
 </Project>
