@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Text.RegularExpressions;
+using Discord;
 using Discord.WebSocket;
 using Garth.Helpers;
 using OpenAI.Utilities.FunctionCalling;
@@ -13,12 +14,15 @@ public class GptContext
     {
         _context = context;
     }
+    
+    private string CleanMessage(string msg) =>
+        new Regex("\\[[0-9]{19}\\] [a-zA-Z0-9]{0,}: ").Replace(msg, "").Trim();
 
     [FunctionDescription("Reply to the current channel with a message")]
     public async Task SendMessageToCurrentChannel(
         [ParameterDescription("The content of the message")] string messageContent)
     {
-        await _context.Message.ReplyAsync(messageContent);
+        await _context.Message.ReplyAsync(CleanMessage(messageContent));
     }
 
     [FunctionDescription("Add a reaction to a specific message")]

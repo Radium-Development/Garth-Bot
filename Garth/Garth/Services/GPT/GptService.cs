@@ -38,6 +38,9 @@ public class GptService
     
     private async Task<List<IMessage>> ResolveThreadTree(GarthCommandContext ctx) =>
         await ResolveThreadTree(ctx.Guild.Id, ctx.Channel.Id, ctx.Message.Id);
+
+    private string CleanMessage(string msg) =>
+        new Regex("\\[[0-9]{19}\\] [a-zA-Z0-9]{0,}: ").Replace(msg, "").Trim();
     
     private async Task<List<IMessage>> ResolveThreadTree(ulong guildId, ulong channelId, ulong messageId)
     {
@@ -170,8 +173,7 @@ public class GptService
                 }
                 else
                 {
-                    var message = String.Join("", response.Content.Split(':').Skip(1));
-                    await context.Message.ReplyAsync(message);
+                    await context.Message.ReplyAsync(CleanMessage(response.Content));
                 }
             }
             catch (Exception ex)
