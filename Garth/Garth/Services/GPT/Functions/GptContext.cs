@@ -35,17 +35,6 @@ public class GptContext
         var emoji = Emote.Parse(emote);
         await message.AddReactionAsync(emoji);
     }
-
-    /*[FunctionDescription("Creates a new thread channel")]
-    public async Task CreateThreadFromMessage(
-        [ParameterDescription("The ID of the message to create the thread from")] string messageId,
-        [ParameterDescription("The title of the thread")] string threadTitle)
-    {
-        ulong messageIdAsULong = ulong.Parse(messageId);
-        var message = await _context.Channel.GetMessageAsync(messageIdAsULong);
-        SocketTextChannel channel = (SocketTextChannel)_context.Channel;
-        await channel.CreateThreadAsync(threadTitle, ThreadType.PublicThread, ThreadArchiveDuration.OneDay, message);
-    }*/
     
     [FunctionDescription("Creates a new thread channel and sends a reply message there")]
     public async Task CreateThreadFromMessageAndReply(

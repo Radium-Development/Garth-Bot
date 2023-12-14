@@ -111,18 +111,34 @@ public class GptService
         (thread.Count switch
         {
             > 0 => thread,
-            _ => (await context.Channel.GetMessagesAsync(5).FlattenAsync()).Skip(1)
+            _ => (await context.Channel.GetMessagesAsync(10).FlattenAsync()).Skip(1)
                 .Where(x => x.Timestamp >= DateTimeOffset.Now.AddMinutes(-20))
         }).ToList().ForEach(message =>
         {
-            messages.Add(
-                new ChatMessage(
-                    message.Author.Id == _discord.CurrentUser.Id ? "assistant" : "user",
-                    FormatDiscordMessageForGpt(message)
-                )
-            );
+            // Check if the bot sent the message
+            if (message.Author.Id == _discord.CurrentUser.Id)
+            {
+                messages.Add(ChatMessage.FromAssistant(FormatDiscordMessageForGpt(message)));
+            }
+            else
+            {
+                var messageContents = new List<MessageContent>()
+                {
+                    MessageContent.TextContent(FormatDiscordMessageForGpt(message))
+                };
+                if(message.Attachments.Any(x => x.ContentType.StartsWith("image")))
+                    messageContents.Add(MessageContent.ImageUrlContent(message.Attachments.First().Url));
+                messages.Add(ChatMessage.FromUser(messageContents));
+            }
+            
         });
-        messages.Add(new ChatMessage("user", FormatDiscordMessageForGpt(context.Message)));
+        var messageContents = new List<MessageContent>()
+        {
+            MessageContent.TextContent(FormatDiscordMessageForGpt(context.Message))
+        };
+        if(context.Message.Attachments.Any(x => x.ContentType.StartsWith("image")))
+            messageContents.Add(MessageContent.ImageUrlContent(context.Message.Attachments.First().Url));
+        messages.Add(ChatMessage.FromUser(messageContents));
     }
     
     private Task MessageReceivedAsync(SocketMessage arg)
@@ -148,12 +164,19 @@ public class GptService
 
                 await AddUserMessages(messages, context);
 
+                bool hasImages = messages.Any(x => x.Contents != null && x.Contents.Any(c => c.Type == "image_url"));
+                
                 // Finally, send the chat request
-                var request = new ChatCompletionCreateRequest()
+                var request = new ChatCompletionCreateRequest
                 {
-                    Functions = FunctionCallingHelper.GetFunctionDefinitions(gptContext),
+                    Tools = hasImages ? null : FunctionCallingHelper.GetFunctionDefinitions(gptContext).Select(function => new ToolDefinition
+                    {
+                        FunctionsAsObject = function,
+                        Type = StaticValues.CompletionStatics.ToolType.Function
+                    }).ToList(),
                     Messages = messages,
-                    Model = Models.Gpt_4
+                    Model = hasImages ? Models.Gpt_4_vision_preview : Models.Gpt_4_1106_preview,
+                    MaxTokens = 4096
                 };
 
                 var reply = await _openAiService.ChatCompletion.CreateCompletion(request);
@@ -161,15 +184,18 @@ public class GptService
                 if (!reply.Successful)
                 {
                     Console.WriteLine("An error occured during a GPT Request");
-                    Console.WriteLine(reply.Error.ToString());
+                    Console.WriteLine(reply.Error.Message.ToString());
                     return;
                 }
 
                 var response = reply.Choices.First().Message;
-                if (response.FunctionCall is not null)
+                if (response.ToolCalls != null && response.ToolCalls.Any())
                 {
-                    var functionCall = response.FunctionCall;
-                    _ = FunctionCallingHelper.CallFunction<Task>(functionCall, gptContext);
+                    foreach(var toolCall in response.ToolCalls)
+                    {
+                        var functionCall = toolCall.FunctionCall;
+                        _ = FunctionCallingHelper.CallFunction<Task>(functionCall, gptContext);
+                    }
                 }
                 else
                 {
