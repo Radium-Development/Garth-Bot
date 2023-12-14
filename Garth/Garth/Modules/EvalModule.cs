@@ -22,8 +22,8 @@ public class EvalModule : ModuleBase<SocketCommandContext>
     [Summary("Evaluates C# code.")]
     public async Task EvalAsync([Remainder][Summary("The script to evaluate")] string script)
     {
-        // Eric
-        if (Context.User.Id == 166730885897388032) return;
+        // Erik only
+        if (Context.User.Id != 201582886137233409) return;
         
         try 
         {

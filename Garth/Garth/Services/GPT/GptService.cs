@@ -105,6 +105,25 @@ public class GptService
         return $"[{message.Id}] {message.Author.Username}: {content}";
     }
     
+    private Tuple<List<string>, string> ExtractImageUrlsAndCleanString(string text)
+    {
+        List<string> urls = new List<string>();
+        // Regular expression for extracting URLs that end with image file extensions
+        string pattern = @"http[s]?://[\S]*\.(jpg|jpeg|png|gif|bmp|webp)";
+
+        MatchCollection matches = Regex.Matches(text, pattern, RegexOptions.IgnoreCase);
+
+        foreach (Match match in matches)
+        {
+            urls.Add(match.Value);
+        }
+
+        // Remove all matched URLs from the original string
+        string cleanedText = Regex.Replace(text, pattern, string.Empty);
+
+        return Tuple.Create(urls, cleanedText);
+    }
+    
     private async Task AddUserMessages(List<ChatMessage> messages, GarthCommandContext context)
     {
         var thread = await ResolveThreadTree(context);
@@ -122,22 +141,39 @@ public class GptService
             }
             else
             {
+                var (urls, messageText) = ExtractImageUrlsAndCleanString(FormatDiscordMessageForGpt(message));
                 var messageContents = new List<MessageContent>()
                 {
-                    MessageContent.TextContent(FormatDiscordMessageForGpt(message))
+                    MessageContent.TextContent(messageText)
                 };
-                if(message.Attachments.Any(x => x.ContentType.StartsWith("image")))
-                    messageContents.Add(MessageContent.ImageUrlContent(message.Attachments.First().Url));
+        
+                // Add all images via URL
+                foreach(var url in urls)
+                    messageContents.Add(MessageContent.ImageUrlContent(url, "high"));
+        
+                // Add all images via attachment
+                foreach(var attachment in message.Attachments.Where(x => x.ContentType.StartsWith("image")))
+                    messageContents.Add(MessageContent.ImageUrlContent(attachment.Url, "high"));
+        
                 messages.Add(ChatMessage.FromUser(messageContents));
             }
             
         });
+        
+        var (urls, messageText) = ExtractImageUrlsAndCleanString(FormatDiscordMessageForGpt(context.Message));
         var messageContents = new List<MessageContent>()
         {
-            MessageContent.TextContent(FormatDiscordMessageForGpt(context.Message))
+            MessageContent.TextContent(messageText)
         };
-        if(context.Message.Attachments.Any(x => x.ContentType.StartsWith("image")))
-            messageContents.Add(MessageContent.ImageUrlContent(context.Message.Attachments.First().Url));
+        
+        // Add all images via URL
+        foreach(var url in urls)
+            messageContents.Add(MessageContent.ImageUrlContent(url, "high"));
+        
+        // Add all images via attachment
+        foreach(var attachment in context.Message.Attachments.Where(x => x.ContentType.StartsWith("image")))
+            messageContents.Add(MessageContent.ImageUrlContent(attachment.Url, "high"));
+        
         messages.Add(ChatMessage.FromUser(messageContents));
     }
     
@@ -180,11 +216,10 @@ public class GptService
                 };
 
                 var reply = await _openAiService.ChatCompletion.CreateCompletion(request);
-
                 if (!reply.Successful)
                 {
                     Console.WriteLine("An error occured during a GPT Request");
-                    Console.WriteLine(reply.Error.Message.ToString());
+                    Console.WriteLine(reply.Error.Message);
                     return;
                 }
 
