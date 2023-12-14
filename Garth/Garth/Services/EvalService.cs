@@ -39,6 +39,7 @@ public class EvalService
                 "System.Collections.Generic",
                 "System.Linq",
                 "System.Threading.Tasks",
+                "System.IO",
                 "Discord",
                 "Discord.Commands",
                 "Discord.WebSocket",
